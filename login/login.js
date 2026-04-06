@@ -4,19 +4,24 @@ document.addEventListener("DOMContentLoaded", function () {
     var emailInput = document.getElementById("login-email");
     var passwordInput = document.getElementById("login-password");
     var rememberInput = document.getElementById("remember-me");
-    var socialButtons = document.querySelectorAll("[data-social-placeholder]");
-    var redirectUrl = new URLSearchParams(window.location.search).get("redirect") || "/";
+    var socialButtons = document.querySelectorAll("[data-social-provider]");
+    var redirectUrl = window.HollowsideAuth.normalizeRedirectPath(
+        new URLSearchParams(window.location.search).get("redirect") || "/"
+    );
 
     socialButtons.forEach(function (button) {
         button.addEventListener("click", function () {
-            window.HollowsideAuth.socialComingSoon(status);
+            window.HollowsideAuth.startOAuthSignIn(button.getAttribute("data-social-provider"), {
+                statusTarget: status,
+                redirectPath: redirectUrl
+            });
         });
     });
 
     if (!window.HollowsideAuth.isConfigured()) {
         window.HollowsideAuth.setStatus(
             status,
-            "Supabase is not connected yet. Add your project URL and publishable key in /supabase-config.js to enable login.",
+            "Supabase is not connected yet. Add your project URL and anon key in /supabase-config.js to enable login.",
             "error"
         );
         return;
