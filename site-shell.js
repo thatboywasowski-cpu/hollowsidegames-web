@@ -21,20 +21,13 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
     }
 
-    function escapeHtml(value) {
-        return String(value || "")
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#39;");
-    }
+    var hasTouchedActivity = false;
 
     function getMenuLink(label, href, kicker) {
         return (
             '<a class="nav-menu-link" href="' + href + '">' +
-                '<span>' + escapeHtml(label) + '</span>' +
-                '<span class="nav-menu-kicker">' + escapeHtml(kicker) + '</span>' +
+                '<span>' + window.HollowsideAuth.escapeHtml(label) + '</span>' +
+                '<span class="nav-menu-kicker">' + window.HollowsideAuth.escapeHtml(kicker) + '</span>' +
             '</a>'
         );
     }
@@ -44,7 +37,7 @@ document.addEventListener("DOMContentLoaded", function () {
         var initials = window.HollowsideAuth.getInitials(profile, user);
 
         if (avatarUrl) {
-            return '<span class="nav-avatar"><img src="' + escapeHtml(avatarUrl) + '" alt="Profile picture"></span>';
+            return '<span class="nav-avatar"><img src="' + window.HollowsideAuth.escapeHtml(avatarUrl) + '" alt="Profile picture"></span>';
         }
 
         return '<span class="nav-avatar">' + initials + "</span>";
@@ -148,23 +141,23 @@ document.addEventListener("DOMContentLoaded", function () {
         );
 
         var shell = document.createElement("div");
-        var displayName = escapeHtml(getDisplayName(profile, user));
-        var handle = escapeHtml(getHandle(profile, user));
-        var roleLabel = escapeHtml((profile && profile.role_label) || "Member");
-
+        var displayName = window.HollowsideAuth.escapeHtml(getDisplayName(profile, user));
+        var handle = window.HollowsideAuth.escapeHtml(getHandle(profile, user));
+        var roleLabel = window.HollowsideAuth.escapeHtml((profile && profile.role_label) || "Member");
+        var verifiedBadge = window.HollowsideAuth.getVerificationBadge(adminContext || profile, "Verified Hollowside account");
         shell.className = "nav-account-shell";
         shell.innerHTML =
             '<button class="nav-account-button" type="button" data-account-menu-button aria-expanded="false" aria-haspopup="true">' +
                 buildAvatarMarkup(profile, user) +
                 '<span class="nav-account-copy">' +
                     "<strong>" + displayName + "</strong>" +
-                    "<span>" + handle + "</span>" +
+                    '<span class="nav-account-handle">' + handle + verifiedBadge + "</span>" +
                 "</span>" +
             "</button>" +
             '<div class="nav-account-menu" data-account-menu hidden>' +
                 '<div class="nav-menu-profile">' +
                     "<strong>" + displayName + "</strong>" +
-                    "<span>" + handle + "</span>" +
+                    '<span class="nav-account-handle">' + handle + verifiedBadge + "</span>" +
                     '<span class="nav-menu-role">' + roleLabel + "</span>" +
                 "</div>" +
                 '<div class="nav-menu-actions">' +
@@ -194,6 +187,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         var profile = null;
+        var accountContext = null;
 
         try {
             var ensured = await window.HollowsideAuth.ensureProfile(supabase, user);
@@ -204,18 +198,21 @@ document.addEventListener("DOMContentLoaded", function () {
             profile = null;
         }
 
-        var adminContext = null;
-
         try {
-            var contextResponse = await supabase.rpc("get_my_role_context");
+            var contextResponse = await supabase.rpc("get_my_account_context");
             if (contextResponse.data && contextResponse.data[0]) {
-                adminContext = contextResponse.data[0];
+                accountContext = contextResponse.data[0];
             }
         } catch (error) {
-            adminContext = null;
+            accountContext = null;
         }
 
-        await renderUserState(user, profile, adminContext);
+        if (!hasTouchedActivity) {
+            hasTouchedActivity = true;
+            window.HollowsideAuth.touchActivity(supabase);
+        }
+
+        await renderUserState(user, profile, accountContext);
     }
 
     document.addEventListener("click", function (event) {
