@@ -37,154 +37,305 @@
         <main class="account-main">
             <section class="account-header">
                 <span class="eyebrow">Account Center</span>
-                <h1>Your Hollowside <span>identity lives here.</span></h1>
+                <h1>Your Hollowside <span>control room.</span></h1>
                 <p>
-                    This is the control room for your profile, public-facing account details,
-                    password, and the foundation for future follows, notifications, and profile-based features.
+                    Profile edits, notifications, safety controls, and the moderation tools for staff
+                    all live here now, so the account area stays sectioned and easier to navigate.
                 </p>
             </section>
 
             <p class="page-status" id="account-status" hidden></p>
 
-            <section class="account-layout">
-                <div class="account-stack">
-                    <article class="account-card">
-                        <div class="account-profile-hero">
-                            <div class="account-avatar-preview" id="account-avatar-preview">H</div>
+            <nav class="account-tab-bar" aria-label="Account Sections">
+                <button class="account-tab is-active" type="button" data-account-tab="profile">Profile</button>
+                <button class="account-tab" type="button" data-account-tab="notifications">Notifications</button>
+                <button class="account-tab" type="button" data-account-tab="safety">Safety</button>
+                <button class="account-tab" type="button" data-account-tab="moderation" id="account-moderation-tab" hidden>Moderation</button>
+            </nav>
 
-                            <div class="account-profile-copy">
-                                <strong class="verified-name">
-                                    <span id="account-preview-name">Hollowside Member</span>
-                                    <span id="account-preview-badge"></span>
-                                </strong>
-                                <span class="identity-line">
-                                    <span id="account-preview-handle">@member</span>
-                                    <span id="account-preview-handle-badge"></span>
-                                </span>
-                                <div class="account-chip-row">
-                                    <span class="account-chip" id="account-preview-role">Member</span>
-                                    <span class="account-chip" id="account-preview-id">ID loading...</span>
-                                </div>
-                            </div>
-                        </div>
+            <section class="account-panel is-active" data-account-panel="profile">
+                <section class="account-layout">
+                    <div class="account-stack">
+                        <article class="account-card">
+                            <div class="account-profile-hero">
+                                <div class="account-avatar-preview" id="account-avatar-preview">H</div>
 
-                        <form class="account-form" id="account-profile-form" action="#" method="post">
-                            <div class="field">
-                                <label for="account-avatar-input">Profile Picture</label>
-                                <input id="account-avatar-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
-                            </div>
-
-                            <div class="account-form-grid">
-                                <div class="field">
-                                    <label for="account-display-name">Display Name</label>
-                                    <input id="account-display-name" type="text" maxlength="48" placeholder="How your name should appear">
-                                </div>
-
-                                <div class="field">
-                                    <label for="account-username">Username</label>
-                                    <input id="account-username" type="text" maxlength="24" placeholder="Your unique @handle">
+                                <div class="account-profile-copy">
+                                    <strong class="verified-name">
+                                        <span id="account-preview-name">Hollowside Member</span>
+                                        <span id="account-preview-badge"></span>
+                                    </strong>
+                                    <span class="identity-line">
+                                        <span id="account-preview-handle">@member</span>
+                                        <span id="account-preview-handle-badge"></span>
+                                    </span>
+                                    <div class="account-chip-row">
+                                        <span class="account-chip" id="account-preview-role">Member</span>
+                                        <span class="account-chip" id="account-preview-id">ID loading...</span>
+                                        <span class="account-chip" id="account-access-chip">Access loading...</span>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="field">
-                                <label for="account-bio">Bio</label>
-                                <textarea id="account-bio" maxlength="240" placeholder="Say a little about yourself or what you build."></textarea>
-                            </div>
-
-                            <div class="account-form-grid">
+                            <form class="account-form" id="account-profile-form" action="#" method="post">
                                 <div class="field">
-                                    <label for="account-website">Website Link</label>
-                                    <input id="account-website" type="url" maxlength="160" placeholder="https://example.com">
+                                    <label for="account-avatar-input">Profile Picture</label>
+                                    <input id="account-avatar-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+                                </div>
+
+                                <div class="account-form-grid">
+                                    <div class="field">
+                                        <label for="account-display-name">Display Name</label>
+                                        <input id="account-display-name" type="text" maxlength="48" placeholder="How your name should appear">
+                                    </div>
+
+                                    <div class="field">
+                                        <label for="account-username">Username</label>
+                                        <input id="account-username" type="text" maxlength="24" placeholder="Your unique @handle">
+                                    </div>
                                 </div>
 
                                 <div class="field">
-                                    <label for="account-location">Location</label>
-                                    <input id="account-location" type="text" maxlength="80" placeholder="Optional city, region, or country">
-                                </div>
-                            </div>
-
-                            <div class="account-actions">
-                                <button class="account-button primary" type="submit">Save Profile</button>
-                            </div>
-                        </form>
-                    </article>
-
-                    <article class="account-card">
-                        <h2>Security</h2>
-                        <p>Keep your account secure and update your password when needed.</p>
-
-                        <form class="account-form" id="account-password-form" action="#" method="post">
-                            <div class="account-form-grid">
-                                <div class="field">
-                                    <label for="account-new-password">New Password</label>
-                                    <input id="account-new-password" type="password" autocomplete="new-password" placeholder="At least 8 characters">
+                                    <label for="account-bio">Bio</label>
+                                    <textarea id="account-bio" maxlength="240" placeholder="Say a little about yourself or what you build."></textarea>
                                 </div>
 
-                                <div class="field">
-                                    <label for="account-confirm-password">Confirm Password</label>
-                                    <input id="account-confirm-password" type="password" autocomplete="new-password" placeholder="Re-enter your new password">
+                                <div class="account-form-grid">
+                                    <div class="field">
+                                        <label for="account-website">Website Link</label>
+                                        <input id="account-website" type="url" maxlength="160" placeholder="https://example.com">
+                                    </div>
+
+                                    <div class="field">
+                                        <label for="account-location">Location</label>
+                                        <input id="account-location" type="text" maxlength="80" placeholder="Optional city, region, or country">
+                                    </div>
+                                </div>
+
+                                <div class="account-actions">
+                                    <button class="account-button primary" type="submit">Save Profile</button>
+                                </div>
+                            </form>
+                        </article>
+
+                        <article class="account-card">
+                            <h2>Security</h2>
+                            <p>Keep your account secure and update your password when needed.</p>
+
+                            <form class="account-form" id="account-password-form" action="#" method="post">
+                                <div class="account-form-grid">
+                                    <div class="field">
+                                        <label for="account-new-password">New Password</label>
+                                        <input id="account-new-password" type="password" autocomplete="new-password" placeholder="At least 8 characters">
+                                    </div>
+
+                                    <div class="field">
+                                        <label for="account-confirm-password">Confirm Password</label>
+                                        <input id="account-confirm-password" type="password" autocomplete="new-password" placeholder="Re-enter your new password">
+                                    </div>
+                                </div>
+
+                                <div class="account-actions">
+                                    <button class="account-button primary" type="submit">Update Password</button>
+                                    <button class="account-button danger" type="button" id="account-signout">Sign Out</button>
+                                </div>
+                            </form>
+                        </article>
+                    </div>
+
+                    <div class="account-stack">
+                        <article class="account-card">
+                            <h3>Account Details</h3>
+                            <div class="account-meta-grid">
+                                <div class="account-meta-item">
+                                    <strong>Public Account ID</strong>
+                                    <span id="account-public-id">Loading...</span>
+                                </div>
+                                <div class="account-meta-item">
+                                    <strong>Email Address</strong>
+                                    <span id="account-email">Loading...</span>
+                                </div>
+                                <div class="account-meta-item">
+                                    <strong>Role</strong>
+                                    <span id="account-role">Loading...</span>
+                                </div>
+                                <div class="account-meta-item">
+                                    <strong>Member Since</strong>
+                                    <span id="account-created">Loading...</span>
+                                </div>
+                                <div class="account-meta-item">
+                                    <strong>Username Change</strong>
+                                    <span id="account-username-change">Loading...</span>
+                                </div>
+                                <div class="account-meta-item">
+                                    <strong>Verification</strong>
+                                    <span id="account-verification-state">Loading...</span>
+                                </div>
+                                <div class="account-meta-item">
+                                    <strong>Email Confirmed</strong>
+                                    <span id="account-verified">Loading...</span>
+                                </div>
+                                <div class="account-meta-item">
+                                    <strong>Access Status</strong>
+                                    <span id="account-access-status">Loading...</span>
                                 </div>
                             </div>
+                        </article>
 
-                            <div class="account-actions">
-                                <button class="account-button primary" type="submit">Update Password</button>
-                                <button class="account-button danger" type="button" id="account-signout">Sign Out</button>
-                            </div>
-                        </form>
-                    </article>
-                </div>
+                        <article class="account-card">
+                            <h3>What This Tab Covers</h3>
+                            <ul class="list">
+                                <li>Profile edits, avatar updates, and public-facing details</li>
+                                <li>Password changes and quick verification visibility</li>
+                                <li>A clearer status view if the account is warned, suspended, or banned</li>
+                            </ul>
+                            <p class="account-note" id="account-restriction-note">No moderation restrictions are active on this account.</p>
+                        </article>
+                    </div>
+                </section>
+            </section>
 
-                <div class="account-stack">
-                    <article class="account-card">
-                        <h3>Account Details</h3>
-                        <div class="account-meta-grid">
-                            <div class="account-meta-item">
-                                <strong>Public Account ID</strong>
-                                <span id="account-public-id">Loading...</span>
+            <section class="account-panel" data-account-panel="notifications" hidden>
+                <section class="account-layout">
+                    <div class="account-stack">
+                        <article class="account-card">
+                            <div class="section-header">
+                                <h2>Notification Feed</h2>
+                                <button class="account-button" type="button" id="account-mark-all-read">Mark All Read</button>
                             </div>
-                            <div class="account-meta-item">
-                                <strong>Email Address</strong>
-                                <span id="account-email">Loading...</span>
+                            <div class="account-chip-row">
+                                <span class="account-chip" id="notification-unread-chip">0 unread</span>
+                                <span class="account-chip" id="warning-count-chip">0 warnings in 30 days</span>
+                                <span class="account-chip" id="report-count-chip">0 reports in 30 days</span>
                             </div>
-                            <div class="account-meta-item">
-                                <strong>Role</strong>
-                                <span id="account-role">Loading...</span>
-                            </div>
-                            <div class="account-meta-item">
-                                <strong>Member Since</strong>
-                                <span id="account-created">Loading...</span>
-                            </div>
-                            <div class="account-meta-item">
-                                <strong>Username Change</strong>
-                                <span id="account-username-change">Loading...</span>
-                            </div>
-                            <div class="account-meta-item">
-                                <strong>Verification</strong>
-                                <span id="account-verification-state">Loading...</span>
-                            </div>
-                            <div class="account-meta-item">
-                                <strong>Email Confirmed</strong>
-                                <span id="account-verified">Loading...</span>
-                            </div>
-                        </div>
-                    </article>
+                            <div class="role-grid" id="notification-feed"></div>
+                        </article>
+                    </div>
 
-                    <article class="account-card" id="future">
-                        <h3>Coming Next</h3>
-                        <p>
-                            This account page is also where follow systems, personal notifications,
-                            saved news follows, and broader social account features can plug in later.
-                        </p>
-                        <ul class="list">
-                            <li>Follow other accounts and official news authors</li>
-                            <li>Receive update alerts in a future notification tab</li>
-                            <li>Grow public profiles beyond the basics as the site expands</li>
-                        </ul>
-                        <p class="account-note">
-                            Username logins are planned, but doing them safely needs a small secure backend lookup instead of a purely static page.
-                        </p>
-                    </article>
-                </div>
+                    <div class="account-stack">
+                        <article class="account-card">
+                            <h3>How Notifications Behave</h3>
+                            <ul class="list">
+                                <li>Warnings show which official issued them and the rolling 30-day count.</li>
+                                <li>Reports against your account or posts show the current 30-day total.</li>
+                                <li>Suspensions and bans show up here so moderation history stays easy to review.</li>
+                            </ul>
+                        </article>
+                    </div>
+                </section>
+            </section>
+
+            <section class="account-panel" data-account-panel="safety" hidden>
+                <section class="account-layout">
+                    <div class="account-stack">
+                        <article class="account-card">
+                            <h2>Block List</h2>
+                            <p>
+                                Blocked accounts stop appearing in your visible account space. They cannot open your profile,
+                                cannot interact on your posts, and their comments disappear from your view.
+                            </p>
+                            <div class="role-grid" id="account-block-list"></div>
+                        </article>
+                    </div>
+
+                    <div class="account-stack">
+                        <article class="account-card">
+                            <h3>Safety Notes</h3>
+                            <ul class="list">
+                                <li>Use blocking when you want a full separation from another account.</li>
+                                <li>You can still report blocked accounts from this list.</li>
+                                <li>Suspensions and bans are visible here so your own account status stays clear.</li>
+                            </ul>
+                        </article>
+                    </div>
+                </section>
+            </section>
+
+            <section class="account-panel" data-account-panel="moderation" hidden>
+                <section class="account-layout">
+                    <div class="account-stack">
+                        <article class="account-card">
+                            <h2>Moderation Actions</h2>
+                            <p>Warnings, suspensions, and bans all honor the role hierarchy automatically.</p>
+
+                            <form class="account-form" id="moderation-warning-form" action="#" method="post">
+                                <div class="account-form-grid">
+                                    <div class="field">
+                                        <label for="moderation-warning-account">Target Account ID</label>
+                                        <input id="moderation-warning-account" type="text" placeholder="hsg_XXXXXXXXXX">
+                                    </div>
+                                    <div class="field">
+                                        <label for="moderation-warning-reason">Warning Reason</label>
+                                        <input id="moderation-warning-reason" type="text" maxlength="240" placeholder="Explain the warning clearly">
+                                    </div>
+                                </div>
+                                <div class="account-actions">
+                                    <button class="account-button primary" type="submit">Issue Warning</button>
+                                </div>
+                            </form>
+
+                            <form class="account-form" id="moderation-sanction-form" action="#" method="post">
+                                <div class="account-form-grid">
+                                    <div class="field">
+                                        <label for="moderation-sanction-account">Target Account ID</label>
+                                        <input id="moderation-sanction-account" type="text" placeholder="hsg_XXXXXXXXXX">
+                                    </div>
+                                    <div class="field">
+                                        <label for="moderation-sanction-action">Action</label>
+                                        <select id="moderation-sanction-action">
+                                            <option value="suspension">Suspend</option>
+                                            <option value="ban">Ban</option>
+                                            <option value="clear_suspension">Lift Suspension</option>
+                                            <option value="clear_ban">Lift Ban</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="account-form-grid">
+                                    <div class="field">
+                                        <label for="moderation-sanction-until">Until</label>
+                                        <input id="moderation-sanction-until" type="datetime-local">
+                                    </div>
+                                    <div class="field">
+                                        <label for="moderation-sanction-reason">Reason / Lift Note</label>
+                                        <input id="moderation-sanction-reason" type="text" maxlength="240" placeholder="Explain the moderation action">
+                                    </div>
+                                </div>
+
+                                <div class="account-actions">
+                                    <button class="account-button primary" type="submit">Apply Action</button>
+                                </div>
+                            </form>
+                        </article>
+
+                        <article class="account-card">
+                            <div class="section-header">
+                                <h3>Open Reports</h3>
+                                <button class="account-button" type="button" id="moderation-refresh-reports">Refresh</button>
+                            </div>
+                            <div class="role-grid" id="moderation-report-list"></div>
+                        </article>
+                    </div>
+
+                    <div class="account-stack">
+                        <article class="account-card">
+                            <div class="section-header">
+                                <h3>Active Sanctions</h3>
+                                <button class="account-button" type="button" id="moderation-refresh-sanctions">Refresh</button>
+                            </div>
+                            <div class="role-grid" id="moderation-sanction-list"></div>
+                        </article>
+
+                        <article class="account-card">
+                            <h3>Moderation Rules</h3>
+                            <ul class="list">
+                                <li>Suspended users can still read and react, but they cannot post or comment.</li>
+                                <li>Banned users are locked to official news and account notices until the ban is lifted.</li>
+                                <li>Head Moderator, Co-Owner, and Owner can ban lower ranked member accounts.</li>
+                            </ul>
+                        </article>
+                    </div>
+                </section>
             </section>
         </main>
     </div>
