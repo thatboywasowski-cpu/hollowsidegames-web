@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Members | Hollowside Games</title>
+    <meta name="description" content="Search Hollowside accounts by display name, username, or unique account ID.">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/auth.css">
+    <link rel="stylesheet" href="/account.css">
+</head>
+<body>
+    <div class="page-shell">
+        <div class="dust-layer" aria-hidden="true"></div>
+
+        <header class="site-header">
+            <div class="site-header-bar">
+                <a class="brand" href="/">
+                    <span class="brand-mark">H</span>
+                    <span class="brand-text">
+                        <strong>Hollowside Games</strong>
+                    </span>
+                </a>
+
+                <nav class="nav-links" aria-label="Primary">
+                    <a class="nav-link" href="/">Home</a>
+                    <a class="nav-link" href="/help">Help</a>
+                    <a class="nav-link" href="/news">News</a>
+                    <a class="nav-link" href="/about">About</a>
+                    <a class="nav-link is-current" href="/directory">Members</a>
+                    <a class="nav-link" href="/login">Login</a>
+                    <a class="nav-link" href="/signup">Sign Up</a>
+                </nav>
+            </div>
+        </header>
+
+        <main class="account-main">
+            <section class="account-header">
+                <span class="eyebrow">Account Search</span>
+                <h1>Find people across <span>Hollowside.</span></h1>
+                <p>
+                    Search the website's public account cards by display name, username, unique ID,
+                    or any combination of those filters.
+                </p>
+            </section>
+
+            <p class="page-status" id="directory-status" hidden></p>
+
+            <article class="account-card">
+                <form class="directory-search-form" id="directory-search-form" action="#" method="get">
+                    <div class="field">
+                        <label for="directory-query">Search Accounts</label>
+                        <input id="directory-query" type="text" placeholder="Search display names, usernames, or account IDs">
+                    </div>
+
+                    <div class="filter-row">
+                        <label class="filter-chip" for="filter-display">
+                            <input id="filter-display" type="checkbox" checked>
+                            <span>Display Names</span>
+                        </label>
+                        <label class="filter-chip" for="filter-username">
+                            <input id="filter-username" type="checkbox" checked>
+                            <span>Usernames</span>
+                        </label>
+                        <label class="filter-chip" for="filter-id">
+                            <input id="filter-id" type="checkbox">
+                            <span>Unique IDs</span>
+                        </label>
+                    </div>
+
+                    <div class="account-actions">
+                        <button class="account-button primary" type="submit">Search</button>
+                    </div>
+                </form>
+            </article>
+
+            <section class="section-block">
+                <div class="section-header">
+                    <h2>Results</h2>
+                    <p id="directory-results-copy">Latest public accounts will show here.</p>
+                </div>
+
+                <div class="directory-grid" id="directory-results"></div>
+            </section>
+        </main>
+    </div>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="/supabase-config.js"></script>
+    <script defer src="/auth-app.js"></script>
+    <script defer src="/site-shell.js"></script>
+    <script defer src="/directory/directory.js"></script>
+</body>
+</html>
