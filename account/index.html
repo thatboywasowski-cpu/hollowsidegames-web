@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -28,9 +27,9 @@
                     <a class="nav-link" href="/help">Help</a>
                     <a class="nav-link" href="/news">News</a>
                     <a class="nav-link" href="/about">About</a>
+                    <a class="nav-link" href="/directory">Members</a>
                     <a class="nav-link" href="/login">Login</a>
                     <a class="nav-link" href="/signup">Sign Up</a>
-                    <a class="nav-link" href="/directory">Members</a>
                 </nav>
             </div>
         </header>
@@ -54,20 +53,19 @@
                             <div class="account-avatar-preview" id="account-avatar-preview">H</div>
 
                             <div class="account-profile-copy">
-    <strong class="verified-name">
-        <span id="account-preview-name">Hollowside Member</span>
-        <span id="account-preview-badge"></span>
-    </strong>
-    <span class="identity-line">
-        <span id="account-preview-handle">@member</span>
-        <span id="account-preview-handle-badge"></span>
-    </span>
-    <div class="account-chip-row">
-        <span class="account-chip" id="account-preview-role">Member</span>
-        <span class="account-chip" id="account-preview-id">ID loading...</span>
-    </div>
-</div>
-
+                                <strong class="verified-name">
+                                    <span id="account-preview-name">Hollowside Member</span>
+                                    <span id="account-preview-badge"></span>
+                                </strong>
+                                <span class="identity-line">
+                                    <span id="account-preview-handle">@member</span>
+                                    <span id="account-preview-handle-badge"></span>
+                                </span>
+                                <div class="account-chip-row">
+                                    <span class="account-chip" id="account-preview-role">Member</span>
+                                    <span class="account-chip" id="account-preview-id">ID loading...</span>
+                                </div>
+                            </div>
                         </div>
 
                         <form class="account-form" id="account-profile-form" action="#" method="post">
@@ -157,10 +155,13 @@
                                 <span id="account-created">Loading...</span>
                             </div>
                             <div class="account-meta-item">
-    <strong>Verification</strong>
-    <span id="account-verification-state">Loading...</span>
-</div>
-
+                                <strong>Username Change</strong>
+                                <span id="account-username-change">Loading...</span>
+                            </div>
+                            <div class="account-meta-item">
+                                <strong>Verification</strong>
+                                <span id="account-verification-state">Loading...</span>
+                            </div>
                             <div class="account-meta-item">
                                 <strong>Email Confirmed</strong>
                                 <span id="account-verified">Loading...</span>
@@ -193,9 +194,5 @@
     <script defer src="/auth-app.js"></script>
     <script defer src="/site-shell.js"></script>
     <script defer src="/account/account.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script defer src="/supabase-config.js"></script>
-<script defer src="/auth-app.js"></script>
-<script defer src="/site-shell.js"></script>
 </body>
 </html>
