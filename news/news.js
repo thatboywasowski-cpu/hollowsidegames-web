@@ -2,12 +2,15 @@ document.addEventListener("DOMContentLoaded", function () {
     var status = document.getElementById("news-status");
     var composerCard = document.getElementById("news-composer-card");
     var postForm = document.getElementById("news-post-form");
+    var subtitleInput = document.getElementById("news-post-subtitle");
     var titleInput = document.getElementById("news-post-title");
     var summaryInput = document.getElementById("news-post-summary");
     var bodyInput = document.getElementById("news-post-body");
     var mediaInput = document.getElementById("news-post-media");
-    var feed = document.getElementById("news-feed");
-    var feedCopy = document.getElementById("news-feed-copy");
+    var featured = document.getElementById("news-featured");
+    var featuredCopy = document.getElementById("news-featured-copy");
+    var rail = document.getElementById("news-rail");
+    var archiveCopy = document.getElementById("news-archive-copy");
 
     if (!window.HollowsideAuth.isConfigured()) {
         window.HollowsideAuth.setStatus(status, "Supabase is not connected yet.", "error");
@@ -16,55 +19,57 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var supabase = window.HollowsideAuth.createClient();
     var viewerContext = null;
+    var cachedPosts = [];
 
     function escapeHtml(value) {
         return window.HollowsideAuth.escapeHtml(value);
     }
 
-    function renderMedia(items) {
+    function getPostHref(postId) {
+        return "/news/post?id=" + encodeURIComponent(postId);
+    }
+
+    function formatDate(value) {
+        return new Date(value).toLocaleDateString(undefined, {
+            year: "numeric",
+            month: "long",
+            day: "numeric"
+        });
+    }
+
+    function formatDateTime(value) {
+        return new Date(value).toLocaleString();
+    }
+
+    function getSubtitle(post) {
+        return (post && post.subtitle ? post.subtitle : "Official Update").toUpperCase();
+    }
+
+    function buildAuthorLine(post) {
+        var badge = window.HollowsideAuth.getVerificationBadge({
+            is_verified: post.author_is_verified,
+            verification_mode: post.author_verification_mode
+        }, "Verified Hollowside account");
+
+        return (
+            '<a class="news-author-line" href="/profile?id=' + encodeURIComponent(post.author_account_id) + '">' +
+                '<span>' + escapeHtml(post.author_display_name) + '</span>' +
+                '<span class="identity-line">@' + escapeHtml(post.author_username) + badge + "</span>" +
+            "</a>"
+        );
+    }
+
+    function renderMediaPreview(items) {
         if (!items.length) {
             return "";
         }
 
-        return (
-            '<div class="post-media-grid">' +
-                items.map(function (item) {
-                    if (item.media_type === "video") {
-                        return '<div class="post-media-item"><video controls preload="metadata" src="' + escapeHtml(item.media_url) + '"></video></div>';
-                    }
-
-                    return '<div class="post-media-item"><img src="' + escapeHtml(item.media_url) + '" alt="Post attachment"></div>';
-                }).join("") +
-            "</div>"
-        );
-    }
-
-    function renderComments(items) {
-        if (!items.length) {
-            return '<p class="post-empty">No comments yet.</p>';
+        var item = items[0];
+        if (item.media_type === "video") {
+            return '<div class="news-featured-media"><video controls preload="metadata" src="' + escapeHtml(item.media_url) + '"></video></div>';
         }
 
-        return (
-            '<div class="comment-list">' +
-                items.map(function (comment) {
-                    var badge = window.HollowsideAuth.getVerificationBadge({
-                        is_verified: comment.author_is_verified,
-                        verification_mode: comment.author_verification_mode
-                    }, "Verified Hollowside account");
-
-                    return (
-                        '<article class="comment-card">' +
-                            '<div class="comment-meta">' +
-                                '<strong>' + escapeHtml(comment.author_display_name) + '</strong>' +
-                                '<span class="identity-line">@' + escapeHtml(comment.author_username) + badge + '</span>' +
-                                '<span>' + escapeHtml(new Date(comment.created_at).toLocaleString()) + '</span>' +
-                            '</div>' +
-                            '<p>' + escapeHtml(comment.body) + '</p>' +
-                        '</article>'
-                    );
-                }).join("") +
-            "</div>"
-        );
+        return '<div class="news-featured-media"><img src="' + escapeHtml(item.media_url) + '" alt="News attachment"></div>';
     }
 
     async function uploadPostMediaFiles(postId, files) {
@@ -72,10 +77,8 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        var uploads = [];
-
-        files.forEach(function (file, index) {
-            uploads.push((async function () {
+        var uploads = files.map(function (file, index) {
+            return (async function () {
                 var extension = (file.name.split(".").pop() || "bin").toLowerCase();
                 var path = viewerContext.id + "/posts/" + postId + "/" + Date.now() + "-" + index + "." + extension;
                 var mediaType = file.type.indexOf("video/") === 0 ? "video" : "image";
@@ -105,10 +108,70 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (attachResult.error) {
                     throw attachResult.error;
                 }
-            })());
+            })();
         });
 
         await Promise.all(uploads);
+    }
+
+    function renderReactionControls(post) {
+        return (
+            '<div class="post-actions news-card-actions">' +
+                '<button class="post-action' + (post.viewer_reaction === "like" ? " is-active" : "") + '" type="button" data-reaction="like" data-post-id="' + escapeHtml(post.id) + '">' + window.HollowsideAuth.formatCountLabel(post.like_count, "Like", "Likes") + "</button>" +
+                '<button class="post-action' + (post.viewer_reaction === "dislike" ? " is-active" : "") + '" type="button" data-reaction="dislike" data-post-id="' + escapeHtml(post.id) + '">' + window.HollowsideAuth.formatCountLabel(post.dislike_count, "Dislike", "Dislikes") + "</button>" +
+            "</div>"
+        );
+    }
+
+    function renderPreviewCard(post) {
+        return (
+            '<article class="news-summary-card" data-post-id="' + escapeHtml(post.id) + '">' +
+                '<p class="meta">' + escapeHtml(getSubtitle(post)) + "</p>" +
+                '<h3>' + escapeHtml(post.title) + "</h3>" +
+                '<p>' + escapeHtml(post.summary || "No short description yet.") + "</p>" +
+                '<div class="news-card-footer">' +
+                    '<div class="news-card-meta">' +
+                        buildAuthorLine(post) +
+                        '<span class="news-card-date">' + escapeHtml(formatDate(post.created_at)) + "</span>" +
+                    "</div>" +
+                    '<div class="news-card-buttons">' +
+                        renderReactionControls(post) +
+                        '<a class="button-link secondary news-view-link" href="' + getPostHref(post.id) + '">View Full Post</a>' +
+                    "</div>" +
+                "</div>" +
+            "</article>"
+        );
+    }
+
+    async function renderFeaturedPost(post) {
+        var mediaResponse = await supabase.rpc("get_post_media", {
+            p_post_id: post.id
+        });
+
+        if (mediaResponse.error) {
+            throw mediaResponse.error;
+        }
+
+        featured.innerHTML =
+            '<article class="news-featured-card" data-post-id="' + escapeHtml(post.id) + '">' +
+                '<div class="news-featured-copy">' +
+                    '<p class="meta">' + escapeHtml(getSubtitle(post)) + "</p>" +
+                    '<h3>' + escapeHtml(post.title) + "</h3>" +
+                    '<p class="post-summary">' + escapeHtml(post.summary || "No short description yet.") + "</p>" +
+                    '<p class="post-body">' + escapeHtml(post.body || "").replace(/\n/g, "<br>") + "</p>" +
+                    '<div class="news-card-footer">' +
+                        '<div class="news-card-meta">' +
+                            buildAuthorLine(post) +
+                            '<span class="news-card-date">' + escapeHtml(formatDateTime(post.created_at)) + "</span>" +
+                        "</div>" +
+                        '<div class="news-card-buttons">' +
+                            renderReactionControls(post) +
+                            '<a class="button-link primary news-view-link" href="' + getPostHref(post.id) + '">View Full Post</a>' +
+                        "</div>" +
+                    "</div>" +
+                "</div>" +
+                renderMediaPreview(mediaResponse.data || []) +
+            "</article>";
     }
 
     async function loadFeed() {
@@ -116,100 +179,52 @@ document.addEventListener("DOMContentLoaded", function () {
             var response = await supabase.rpc("get_post_feed", {
                 p_post_type: "news",
                 p_author_account_id: null,
-                p_limit: 20
+                p_limit: 24
             });
 
             if (response.error) {
                 throw response.error;
             }
 
-            var posts = response.data || [];
-            feedCopy.textContent = posts.length ? posts.length + " official post" + (posts.length === 1 ? "" : "s") : "No official posts yet.";
+            cachedPosts = response.data || [];
 
-            if (!posts.length) {
-                feed.innerHTML = '<p class="post-empty">No official news has been published yet.</p>';
+            if (!cachedPosts.length) {
+                featuredCopy.textContent = "No official posts yet.";
+                archiveCopy.textContent = "Once a studio post is published, it will appear here.";
+                featured.innerHTML = '<article class="content-card"><h3>No official posts yet</h3><p>The first staff-authored post will land here as soon as it is published.</p></article>';
+                rail.innerHTML = "";
                 return;
             }
 
-            var blocks = await Promise.all(posts.map(async function (post) {
-                var mediaResponse = await supabase.rpc("get_post_media", { p_post_id: post.id });
-                var commentsResponse = await supabase.rpc("get_post_comments", { p_post_id: post.id, p_limit: 14 });
-                var badge = window.HollowsideAuth.getVerificationBadge({
-                    is_verified: post.author_is_verified,
-                    verification_mode: post.author_verification_mode
-                }, "Verified Hollowside account");
-
-                if (mediaResponse.error) {
-                    throw mediaResponse.error;
-                }
-
-                if (commentsResponse.error) {
-                    throw commentsResponse.error;
-                }
-
-                return (
-                    '<article class="post-card" data-post-id="' + escapeHtml(post.id) + '">' +
-                        '<div class="post-header">' +
-                            '<div class="post-author">' +
-                                (post.author_avatar_url
-                                    ? '<span class="account-avatar-preview"><img src="' + escapeHtml(post.author_avatar_url) + '" alt="Profile picture"></span>'
-                                    : '<span class="account-avatar-preview">' + window.HollowsideAuth.getInitials({ display_name: post.author_display_name }, null) + "</span>") +
-                                '<div class="post-author-copy">' +
-                                    '<strong>' + escapeHtml(post.author_display_name) + '</strong>' +
-                                    '<span class="identity-line">@' + escapeHtml(post.author_username) + badge + " - " + escapeHtml(post.author_role_label) + '</span>' +
-                                '</div>' +
-                            '</div>' +
-                            '<span class="post-date">' + escapeHtml(new Date(post.created_at).toLocaleString()) + '</span>' +
-                        '</div>' +
-                        '<h3 class="post-title">' + escapeHtml(post.title) + '</h3>' +
-                        (post.summary ? '<p class="post-summary">' + escapeHtml(post.summary) + '</p>' : "") +
-                        '<p class="post-body">' + escapeHtml(post.body) + '</p>' +
-                        renderMedia(mediaResponse.data || []) +
-                        '<div class="post-actions">' +
-                            '<button class="post-action' + (post.viewer_reaction === "like" ? " is-active" : "") + '" type="button" data-reaction="like" data-post-id="' + escapeHtml(post.id) + '">Like - ' + window.HollowsideAuth.formatCountLabel(post.like_count, "Like", "Likes") + '</button>' +
-                            '<button class="post-action' + (post.viewer_reaction === "dislike" ? " is-active" : "") + '" type="button" data-reaction="dislike" data-post-id="' + escapeHtml(post.id) + '">Dislike - ' + window.HollowsideAuth.formatCountLabel(post.dislike_count, "Dislike", "Dislikes") + '</button>' +
-                            '<span class="account-chip">' + window.HollowsideAuth.formatCountLabel(post.comment_count, "Comment", "Comments") + '</span>' +
-                        '</div>' +
-                        renderComments(commentsResponse.data || []) +
-                        (viewerContext && viewerContext.can_comment_posts
-                            ? '<form class="comment-form" data-comment-form data-post-id="' + escapeHtml(post.id) + '">' +
-                                '<textarea maxlength="1500" placeholder="Write a comment..."></textarea>' +
-                                '<div class="account-actions"><button class="account-button primary" type="submit">Comment</button></div>' +
-                              '</form>'
-                            : (!viewerContext
-                                ? '<p class="account-note">Log in to react or comment.</p>'
-                                : '<p class="account-note">Comments unlock automatically once an account becomes a Trusted Member or higher.</p>')) +
-                    '</article>'
-                );
-            }));
-
-            feed.innerHTML = blocks.join("");
+            featuredCopy.textContent = "Newest official post from the studio.";
+            archiveCopy.textContent = cachedPosts.length + " published post" + (cachedPosts.length === 1 ? "" : "s") + " ready to browse.";
+            await renderFeaturedPost(cachedPosts[0]);
+            rail.innerHTML = cachedPosts.map(renderPreviewCard).join("");
         } catch (error) {
-            feed.innerHTML = "";
-            feedCopy.textContent = "Unable to load official posts.";
+            featured.innerHTML = "";
+            rail.innerHTML = "";
+            featuredCopy.textContent = "Unable to load the newest post.";
+            archiveCopy.textContent = "The archive could not be loaded.";
             window.HollowsideAuth.setStatus(
                 status,
-                error && error.message ? error.message : "Something went wrong while loading the news feed.",
+                error && error.message ? error.message : "Something went wrong while loading the news page.",
                 "error"
             );
         }
     }
 
-    feed.addEventListener("click", async function (event) {
-        var reaction = event.target.getAttribute("data-reaction");
-        var postId = event.target.getAttribute("data-post-id");
-        if (!reaction || !postId) {
-            return;
-        }
-
+    async function handleReaction(postId, reaction, trigger) {
         try {
             if (!viewerContext) {
                 window.location.href = "/login?redirect=" + encodeURIComponent("/news");
                 return;
             }
 
-            if (event.target.classList.contains("is-active")) {
-                var clearResult = await supabase.rpc("clear_post_reaction", { p_post_id: postId });
+            if (trigger.classList.contains("is-active")) {
+                var clearResult = await supabase.rpc("clear_post_reaction", {
+                    p_post_id: postId
+                });
+
                 if (clearResult.error) {
                     throw clearResult.error;
                 }
@@ -224,7 +239,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             }
 
-            loadFeed();
+            await loadFeed();
         } catch (error) {
             window.HollowsideAuth.setStatus(
                 status,
@@ -232,45 +247,19 @@ document.addEventListener("DOMContentLoaded", function () {
                 "error"
             );
         }
-    });
+    }
 
-    feed.addEventListener("submit", async function (event) {
-        var form = event.target;
-        if (!form.hasAttribute("data-comment-form")) {
-            return;
-        }
+    [featured, rail].forEach(function (container) {
+        container.addEventListener("click", function (event) {
+            var reaction = event.target.getAttribute("data-reaction");
+            var postId = event.target.getAttribute("data-post-id");
 
-        event.preventDefault();
-
-        var postId = form.getAttribute("data-post-id");
-        var textarea = form.querySelector("textarea");
-        var body = textarea.value.trim();
-
-        if (!body) {
-            textarea.focus();
-            return;
-        }
-
-        try {
-            var commentResponse = await supabase.rpc("create_post_comment", {
-                p_post_id: postId,
-                p_body: body,
-                p_parent_id: null
-            });
-
-            if (commentResponse.error) {
-                throw commentResponse.error;
+            if (!reaction || !postId) {
+                return;
             }
 
-            textarea.value = "";
-            loadFeed();
-        } catch (error) {
-            window.HollowsideAuth.setStatus(
-                status,
-                error && error.message ? error.message : "Something went wrong while posting your comment.",
-                "error"
-            );
-        }
+            handleReaction(postId, reaction, event.target);
+        });
     });
 
     postForm.addEventListener("submit", async function (event) {
@@ -286,6 +275,11 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
+        if (!summaryInput.value.trim()) {
+            summaryInput.focus();
+            return;
+        }
+
         if (!bodyInput.value.trim()) {
             bodyInput.focus();
             return;
@@ -297,7 +291,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 p_post_type: "news",
                 p_title: titleInput.value.trim(),
                 p_body: bodyInput.value.trim(),
-                p_summary: summaryInput.value.trim()
+                p_summary: summaryInput.value.trim(),
+                p_subtitle: subtitleInput.value.trim()
             });
 
             if (createResponse.error) {
@@ -306,13 +301,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
             var createdPost = createResponse.data;
             var files = Array.prototype.slice.call(mediaInput.files || []);
+
             if (files.length) {
                 await uploadPostMediaFiles(createdPost.id, files);
             }
 
             postForm.reset();
             window.HollowsideAuth.setStatus(status, "Official news post published.", "success");
-            loadFeed();
+            await loadFeed();
         } catch (error) {
             window.HollowsideAuth.setStatus(
                 status,
