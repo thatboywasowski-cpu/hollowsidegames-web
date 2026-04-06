@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Role Tools | Hollowside Games</title>
+    <meta name="description" content="Configure Hollowside roles and account permission overrides.">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/auth.css">
+    <link rel="stylesheet" href="/account.css">
+</head>
+<body>
+    <div class="page-shell">
+        <div class="dust-layer" aria-hidden="true"></div>
+
+        <header class="site-header">
+            <div class="site-header-bar">
+                <a class="brand" href="/">
+                    <span class="brand-mark">H</span>
+                    <span class="brand-text">
+                        <strong>Hollowside Games</strong>
+                    </span>
+                </a>
+
+                <nav class="nav-links" aria-label="Primary">
+                    <a class="nav-link" href="/">Home</a>
+                    <a class="nav-link" href="/help">Help</a>
+                    <a class="nav-link" href="/news">News</a>
+                    <a class="nav-link" href="/about">About</a>
+                    <a class="nav-link" href="/directory">Members</a>
+                    <a class="nav-link is-current" href="/admin/roles">Role Tools</a>
+                    <a class="nav-link" href="/login">Login</a>
+                    <a class="nav-link" href="/signup">Sign Up</a>
+                </nav>
+            </div>
+        </header>
+
+        <main class="account-main">
+            <section class="account-header">
+                <span class="eyebrow">Staff Controls</span>
+                <h1>Configure roles and <span>account permissions.</span></h1>
+                <p>
+                    Owner and Co-Owner tools live here. Higher roles can only configure roles
+                    and accounts below them in the hierarchy.
+                </p>
+            </section>
+
+            <p class="page-status" id="admin-status" hidden></p>
+
+            <section class="account-layout">
+                <div class="account-stack">
+                    <article class="account-card">
+                        <h2>Assign Account Roles</h2>
+                        <p>Use an account ID to update a user's role. The hierarchy is enforced automatically.</p>
+
+                        <form class="account-form" id="role-assignment-form" action="#" method="post">
+                            <div class="account-form-grid">
+                                <div class="field">
+                                    <label for="role-target-account-id">Target Account ID</label>
+                                    <input id="role-target-account-id" type="text" placeholder="hsg_XXXXXXXXXX">
+                                </div>
+
+                                <div class="field">
+                                    <label for="role-target-role">New Role</label>
+                                    <select id="role-target-role"></select>
+                                </div>
+                            </div>
+
+                            <div class="account-actions">
+                                <button class="account-button primary" type="submit">Update Role</button>
+                            </div>
+                        </form>
+                    </article>
+
+                    <article class="account-card">
+                        <h2>Role Permission Matrix</h2>
+                        <p>These are the default permissions for a role. Manual account overrides can still replace them later.</p>
+
+                        <div class="account-form-grid">
+                            <div class="field">
+                                <label for="role-permission-role">Role</label>
+                                <select id="role-permission-role"></select>
+                            </div>
+                        </div>
+
+                        <div class="role-permission-grid" id="role-permission-grid"></div>
+                    </article>
+                </div>
+
+                <div class="account-stack">
+                    <article class="account-card">
+                        <h3>Account Permission Overrides</h3>
+                        <p>Use manual overrides when an individual account should behave differently than its base role.</p>
+
+                        <div class="account-form-grid">
+                            <div class="field">
+                                <label for="override-account-id">Target Account ID</label>
+                                <input id="override-account-id" type="text" placeholder="hsg_XXXXXXXXXX">
+                            </div>
+
+                            <div class="field">
+                                <label>&nbsp;</label>
+                                <button class="account-button primary" id="load-overrides" type="button">Load Overrides</button>
+                            </div>
+                        </div>
+
+                        <div class="role-grid" id="account-permission-grid"></div>
+                    </article>
+
+                    <article class="account-card">
+                        <h3>Hierarchy</h3>
+                        <ul class="list">
+                            <li>Owner</li>
+                            <li>Co-Owner</li>
+                            <li>Developer</li>
+                            <li>Head Moderator</li>
+                            <li>Moderator</li>
+                            <li>Trusted Member</li>
+                            <li>Member</li>
+                        </ul>
+                        <p class="account-note">
+                            Manual account permission overrides win over the default role permission matrix.
+                        </p>
+                    </article>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="/supabase-config.js"></script>
+    <script defer src="/auth-app.js"></script>
+    <script defer src="/site-shell.js"></script>
+    <script defer src="/admin/roles/roles.js"></script>
+</body>
+</html>
