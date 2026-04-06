@@ -51,15 +51,17 @@
             <section class="auth-card" aria-labelledby="login-heading">
                 <div class="auth-card-header">
                     <h2 id="login-heading">Log In</h2>
-                    <p>Use one of the options below. These buttons are layout-only for now and will be wired up later.</p>
+                    <p>Use one of the options below. Email login is live once your Supabase keys are added. Social sign-in can be wired later.</p>
                 </div>
 
+                <p class="auth-status" id="login-status" hidden></p>
+
                 <div class="social-stack">
-                    <button class="social-button" type="button">
+                    <button class="social-button" type="button" data-social-placeholder="google">
                         <span class="social-mark">G</span>
                         <span>Continue with Google</span>
                     </button>
-                    <button class="social-button" type="button">
+                    <button class="social-button" type="button" data-social-placeholder="apple">
                         <span class="social-mark">A</span>
                         <span>Continue with Apple</span>
                     </button>
@@ -67,15 +69,15 @@
 
                 <div class="auth-divider">Or sign in with email</div>
 
-                <form class="auth-form" action="#" method="get">
+                <form class="auth-form" id="login-form" action="#" method="post">
                     <div class="field">
-                        <label for="login-identity">Email or Username</label>
-                        <input id="login-identity" name="identity" type="text" placeholder="Enter your email or username">
+                        <label for="login-email">Email Address</label>
+                        <input id="login-email" name="email" type="email" placeholder="Enter your email address" autocomplete="email">
                     </div>
 
                     <div class="field">
                         <label for="login-password">Password</label>
-                        <input id="login-password" name="password" type="password" placeholder="Enter your password">
+                        <input id="login-password" name="password" type="password" placeholder="Enter your password" autocomplete="current-password">
                     </div>
 
                     <div class="auth-utility">
@@ -84,10 +86,10 @@
                             <span>Remember me</span>
                         </label>
 
-                        <a class="auth-link" href="/help">Forgot password?</a>
+                        <a class="auth-link" href="/reset-password">Forgot password?</a>
                     </div>
 
-                    <button class="auth-button" type="button">Log In</button>
+                    <button class="auth-button" type="submit">Log In</button>
                 </form>
 
                 <p class="auth-footnote">
@@ -97,5 +99,10 @@
             </section>
         </main>
     </div>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="/supabase-config.js"></script>
+    <script defer src="/auth-app.js"></script>
+    <script defer src="/login/login.js"></script>
 </body>
 </html>
