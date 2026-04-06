@@ -1,1 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Hollowside Games</title>
+    <meta name="description" content="Log in to Hollowside Games.">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/auth.css">
+</head>
+<body>
+    <div class="page-shell">
+        <header class="site-header">
+            <div class="site-header-bar">
+                <a class="brand" href="/">
+                    <span class="brand-mark">H</span>
+                    <span class="brand-text">
+                        <strong>Hollowside Games</strong>
+                        <span>Studio Portal</span>
+                    </span>
+                </a>
 
+                <nav class="nav-links" aria-label="Primary">
+                    <a class="nav-link" href="/">Home</a>
+                    <a class="nav-link" href="/help">Help</a>
+                    <a class="nav-link" href="/news">News</a>
+                    <a class="nav-link" href="/about">About</a>
+                    <a class="nav-link is-current" href="/login">Login</a>
+                    <a class="nav-link" href="/signup">Sign Up</a>
+                </nav>
+            </div>
+        </header>
+
+        <main class="auth-main">
+            <section class="auth-copy" aria-label="Intro">
+                <span class="eyebrow">Developer Access</span>
+                <h1>Welcome back to <span>Hollowside Games.</span></h1>
+                <p>
+                    Log in to access your studio account, future engine services,
+                    project updates, and the Hollowside developer ecosystem.
+                </p>
+
+                <ul class="feature-list">
+                    <li>Keep your account connected to future HollowEngine tools.</li>
+                    <li>Read studio updates, engine notes, and public news.</li>
+                    <li>Prepare for verified roles, staff access, and shared systems later.</li>
+                </ul>
+            </section>
+
+            <section class="auth-card" aria-labelledby="login-heading">
+                <div class="auth-card-header">
+                    <h2 id="login-heading">Log In</h2>
+                    <p>Use one of the options below. These buttons are layout-only for now and will be wired up later.</p>
+                </div>
+
+                <div class="social-stack">
+                    <button class="social-button" type="button">
+                        <span class="social-mark">G</span>
+                        <span>Continue with Google</span>
+                    </button>
+                    <button class="social-button" type="button">
+                        <span class="social-mark">A</span>
+                        <span>Continue with Apple</span>
+                    </button>
+                </div>
+
+                <div class="auth-divider">Or sign in with email</div>
+
+                <form class="auth-form" action="#" method="get">
+                    <div class="field">
+                        <label for="login-identity">Email or Username</label>
+                        <input id="login-identity" name="identity" type="text" placeholder="Enter your email or username">
+                    </div>
+
+                    <div class="field">
+                        <label for="login-password">Password</label>
+                        <input id="login-password" name="password" type="password" placeholder="Enter your password">
+                    </div>
+
+                    <div class="auth-utility">
+                        <label class="auth-checkbox" for="remember-me">
+                            <input id="remember-me" type="checkbox">
+                            <span>Remember me</span>
+                        </label>
+
+                        <a class="auth-link" href="/help">Forgot password?</a>
+                    </div>
+
+                    <button class="auth-button" type="button">Log In</button>
+                </form>
+
+                <p class="auth-footnote">
+                    Don't have an account?
+                    <a class="auth-link" href="/signup">Sign up here!</a>
+                </p>
+            </section>
+        </main>
+    </div>
+</body>
+</html>
