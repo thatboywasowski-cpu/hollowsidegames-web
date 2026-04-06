@@ -134,12 +134,18 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    async function renderUserState(user, profile) {
+    async function renderUserState(user, profile, adminContext) {
         guestLinks.forEach(function (link) {
             link.classList.add("is-hidden");
         });
 
         removeAccountShell();
+
+        var canOpenRoleTools = adminContext && (
+            adminContext.can_manage_roles ||
+            adminContext.can_manage_role_permissions ||
+            adminContext.can_manage_account_permissions
+        );
 
         var shell = document.createElement("div");
         var displayName = escapeHtml(getDisplayName(profile, user));
@@ -162,9 +168,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     '<span class="nav-menu-role">' + roleLabel + "</span>" +
                 "</div>" +
                 '<div class="nav-menu-actions">' +
+                    getMenuLink("Browse members", "/directory", "search") +
                     getMenuLink("Account settings", "/account", "profile") +
                     getMenuLink("Notifications", "/account#future", "soon") +
                     getMenuLink("Following", "/account#future", "soon") +
+                    (canOpenRoleTools ? getMenuLink("Role tools", "/admin/roles", "staff") : "") +
                     '<button class="nav-menu-button" type="button" data-nav-signout>' +
                         "<span>Sign out</span>" +
                         '<span class="nav-menu-kicker">leave</span>' +
@@ -196,7 +204,18 @@ document.addEventListener("DOMContentLoaded", function () {
             profile = null;
         }
 
-        await renderUserState(user, profile);
+        var adminContext = null;
+
+        try {
+            var contextResponse = await supabase.rpc("get_my_role_context");
+            if (contextResponse.data && contextResponse.data[0]) {
+                adminContext = contextResponse.data[0];
+            }
+        } catch (error) {
+            adminContext = null;
+        }
+
+        await renderUserState(user, profile, adminContext);
     }
 
     document.addEventListener("click", function (event) {
