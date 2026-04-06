@@ -226,4 +226,300 @@ document.addEventListener("DOMContentLoaded", function () {
             uploads.push((async function () {
                 var extension = (file.name.split(".").pop() || "bin").toLowerCase();
                 var path = viewerContext.id + "/posts/" + postId + "/" + Date.now() + "-" + index + "." + extension;
-                var mediaType = file.type.indexOf("video/") === 
+                var mediaType = file.type.indexOf("video/") === 0 ? "video" : "image";
+                var uploadResult = await supabase.storage
+                    .from("post-media")
+                    .upload(path, file, {
+                        upsert: false,
+                        cacheControl: "3600"
+                    });
+
+                if (uploadResult.error) {
+                    throw uploadResult.error;
+                }
+
+                var publicUrlResult = supabase.storage
+                    .from("post-media")
+                    .getPublicUrl(path);
+
+                var attachResult = await supabase.rpc("attach_post_media", {
+                    p_post_id: postId,
+                    p_media_type: mediaType,
+                    p_media_url: publicUrlResult.data.publicUrl,
+                    p_media_path: path,
+                    p_sort_order: index
+                });
+
+                if (attachResult.error) {
+                    throw attachResult.error;
+                }
+            })());
+        });
+
+        await Promise.all(uploads);
+    }
+
+    async function loadProfilePosts() {
+        try {
+            var response = await supabase.rpc("get_post_feed", {
+                p_post_type: "profile",
+                p_author_account_id: accountId,
+                p_limit: 20
+            });
+
+            if (response.error) {
+                throw response.error;
+            }
+
+            var posts = response.data || [];
+            postCopy.textContent = posts.length ? posts.length + " post" + (posts.length === 1 ? "" : "s") : "No profile posts yet.";
+
+            if (!posts.length) {
+                postFeed.innerHTML = '<p class="post-empty">This account has not posted anything yet.</p>';
+                return;
+            }
+
+            var htmlBlocks = await Promise.all(posts.map(async function (post) {
+                var mediaResponse = await supabase.rpc("get_post_media", { p_post_id: post.id });
+                var commentsResponse = await supabase.rpc("get_post_comments", { p_post_id: post.id, p_limit: 12 });
+                var badge = window.HollowsideAuth.getVerificationBadge({
+                    is_verified: post.author_is_verified,
+                    verification_mode: post.author_verification_mode
+                }, "Verified Hollowside account");
+
+                if (mediaResponse.error) {
+                    throw mediaResponse.error;
+                }
+
+                if (commentsResponse.error) {
+                    throw commentsResponse.error;
+                }
+
+                return (
+                    '<article class="post-card" data-post-id="' + escapeHtml(post.id) + '">' +
+                        '<div class="post-header">' +
+                            '<div class="post-author">' +
+                                (post.author_avatar_url
+                                    ? '<span class="account-avatar-preview"><img src="' + escapeHtml(post.author_avatar_url) + '" alt="Profile picture"></span>'
+                                    : '<span class="account-avatar-preview">' + window.HollowsideAuth.getInitials({ display_name: post.author_display_name }, null) + "</span>") +
+                                '<div class="post-author-copy">' +
+                                    '<strong>' + escapeHtml(post.author_display_name) + '</strong>' +
+                                    '<span class="identity-line">@' + escapeHtml(post.author_username) + badge + " - " + escapeHtml(post.author_role_label) + '</span>' +
+                                '</div>' +
+                            '</div>' +
+                            '<span class="post-date">' + escapeHtml(new Date(post.created_at).toLocaleString()) + '</span>' +
+                        '</div>' +
+                        '<p class="post-body">' + escapeHtml(post.body) + '</p>' +
+                        renderMedia(mediaResponse.data || []) +
+                        '<div class="post-actions">' +
+                            '<button class="post-action' + (post.viewer_reaction === "like" ? " is-active" : "") + '" type="button" data-reaction="like" data-post-id="' + escapeHtml(post.id) + '">Like - ' + window.HollowsideAuth.formatCountLabel(post.like_count, "Like", "Likes") + '</button>' +
+                            '<button class="post-action' + (post.viewer_reaction === "dislike" ? " is-active" : "") + '" type="button" data-reaction="dislike" data-post-id="' + escapeHtml(post.id) + '">Dislike - ' + window.HollowsideAuth.formatCountLabel(post.dislike_count, "Dislike", "Dislikes") + '</button>' +
+                            '<span class="account-chip">' + window.HollowsideAuth.formatCountLabel(post.comment_count, "Comment", "Comments") + '</span>' +
+                        '</div>' +
+                        renderComments(commentsResponse.data || []) +
+                        (viewerContext && viewerContext.can_comment_posts
+                            ? '<form class="comment-form" data-comment-form data-post-id="' + escapeHtml(post.id) + '">' +
+                                '<textarea maxlength="1500" placeholder="Write a comment..."></textarea>' +
+                                '<div class="account-actions"><button class="account-button primary" type="submit">Comment</button></div>' +
+                              '</form>'
+                            : (!viewerContext
+                                ? '<p class="account-note">Log in to react or comment.</p>'
+                                : '<p class="account-note">Comments unlock automatically once an account becomes a Trusted Member or higher.</p>')) +
+                    '</article>'
+                );
+            }));
+
+            postFeed.innerHTML = htmlBlocks.join("");
+        } catch (error) {
+            postFeed.innerHTML = "";
+            postCopy.textContent = "Unable to load posts right now.";
+            window.HollowsideAuth.setStatus(
+                status,
+                error && error.message ? error.message : "Something went wrong while loading profile posts.",
+                "error"
+            );
+        }
+    }
+
+    postFeed.addEventListener("click", async function (event) {
+        var reaction = event.target.getAttribute("data-reaction");
+        var postId = event.target.getAttribute("data-post-id");
+        if (!reaction || !postId) {
+            return;
+        }
+
+        try {
+            if (!viewerContext) {
+                window.location.href = "/login?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
+                return;
+            }
+
+            if (event.target.classList.contains("is-active")) {
+                var clearResult = await supabase.rpc("clear_post_reaction", { p_post_id: postId });
+                if (clearResult.error) {
+                    throw clearResult.error;
+                }
+            } else {
+                var reactionResult = await supabase.rpc("set_post_reaction", {
+                    p_post_id: postId,
+                    p_reaction_type: reaction
+                });
+
+                if (reactionResult.error) {
+                    throw reactionResult.error;
+                }
+            }
+
+            loadProfilePosts();
+        } catch (error) {
+            window.HollowsideAuth.setStatus(
+                status,
+                error && error.message ? error.message : "Something went wrong while reacting to the post.",
+                "error"
+            );
+        }
+    });
+
+    postFeed.addEventListener("submit", async function (event) {
+        var form = event.target;
+        if (!form.hasAttribute("data-comment-form")) {
+            return;
+        }
+
+        event.preventDefault();
+
+        var postId = form.getAttribute("data-post-id");
+        var textarea = form.querySelector("textarea");
+        var body = textarea.value.trim();
+
+        if (!body) {
+            textarea.focus();
+            return;
+        }
+
+        try {
+            var commentResponse = await supabase.rpc("create_post_comment", {
+                p_post_id: postId,
+                p_body: body,
+                p_parent_id: null
+            });
+
+            if (commentResponse.error) {
+                throw commentResponse.error;
+            }
+
+            textarea.value = "";
+            loadProfilePosts();
+        } catch (error) {
+            window.HollowsideAuth.setStatus(
+                status,
+                error && error.message ? error.message : "Something went wrong while posting your comment.",
+                "error"
+            );
+        }
+    });
+
+    postForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        if (!viewerContext || viewerContext.account_id !== accountId || !viewerContext.can_publish_personal_posts) {
+            window.HollowsideAuth.setStatus(status, "You do not have permission to post from this profile.", "error");
+            return;
+        }
+
+        if (!postBody.value.trim()) {
+            postBody.focus();
+            return;
+        }
+
+        try {
+            window.HollowsideAuth.setBusy(postForm, true);
+            var createResponse = await supabase.rpc("create_content_post", {
+                p_post_type: "profile",
+                p_title: "",
+                p_body: postBody.value.trim(),
+                p_summary: ""
+            });
+
+            if (createResponse.error) {
+                throw createResponse.error;
+            }
+
+            var createdPost = createResponse.data;
+            var files = Array.prototype.slice.call(postMedia.files || []);
+            if (files.length) {
+                await uploadPostMediaFiles(createdPost.id, files);
+            }
+
+            postForm.reset();
+            window.HollowsideAuth.setStatus(status, "Profile post published.", "success");
+            loadProfilePosts();
+        } catch (error) {
+            window.HollowsideAuth.setStatus(
+                status,
+                error && error.message ? error.message : "Something went wrong while publishing your profile post.",
+                "error"
+            );
+        } finally {
+            window.HollowsideAuth.setBusy(postForm, false);
+        }
+    });
+
+    async function loadProfile() {
+        try {
+            window.HollowsideAuth.setStatus(status, "Loading profile...", "info");
+
+            var viewerContextResponse = await supabase.rpc("get_my_account_context");
+            viewerContext = viewerContextResponse.data && viewerContextResponse.data[0] ? viewerContextResponse.data[0] : null;
+
+            var response = await supabase.rpc("get_profile_view", {
+                p_account_id: accountId
+            });
+
+            if (response.error) {
+                throw response.error;
+            }
+
+            profileCard = response.data && response.data[0];
+            if (!profileCard) {
+                window.HollowsideAuth.setStatus(status, "That account could not be found.", "error");
+                return;
+            }
+
+            document.title = profileCard.display_name + " | Hollowside Games";
+            setAvatar(profileCard);
+            displayName.textContent = profileCard.display_name;
+            username.textContent = "@" + profileCard.username;
+            displayBadge.innerHTML = "";
+            usernameBadge.innerHTML = window.HollowsideAuth.getVerificationBadge(profileCard, "Verified Hollowside account");
+            role.textContent = profileCard.role_label;
+            memberSince.textContent = "Member since " + new Date(profileCard.member_since).toLocaleDateString();
+            bio.textContent = profileCard.bio || "No bio yet.";
+            updateStatBlock(followerCount, profileCard.follower_count);
+            updateStatBlock(followingCount, profileCard.following_count);
+            updateStatBlock(friendCount, profileCard.friend_count);
+            renderActions(profileCard);
+
+            if (viewerContext && viewerContext.account_id === profileCard.account_id && viewerContext.can_publish_personal_posts) {
+                composerCard.hidden = false;
+            }
+
+            await Promise.all([
+                loadConnections("followers", followers),
+                loadConnections("following", following),
+                loadConnections("friends", friends),
+                loadProfilePosts()
+            ]);
+
+            window.HollowsideAuth.setStatus(status, "", "info");
+        } catch (error) {
+            window.HollowsideAuth.setStatus(
+                status,
+                error && error.message ? error.message : "Something went wrong while loading this profile.",
+                "error"
+            );
+        }
+    }
+
+    loadProfile();
+});
