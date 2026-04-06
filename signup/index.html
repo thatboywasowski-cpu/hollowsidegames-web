@@ -1,1 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up | Hollowside Games</title>
+    <meta name="description" content="Create a Hollowside Games account.">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/auth.css">
+</head>
+<body>
+    <div class="page-shell">
+        <header class="site-header">
+            <div class="site-header-bar">
+                <a class="brand" href="/">
+                    <span class="brand-mark">H</span>
+                    <span class="brand-text">
+                        <strong>Hollowside Games</strong>
+                        <span>Studio Portal</span>
+                    </span>
+                </a>
 
+                <nav class="nav-links" aria-label="Primary">
+                    <a class="nav-link" href="/">Home</a>
+                    <a class="nav-link" href="/help">Help</a>
+                    <a class="nav-link" href="/news">News</a>
+                    <a class="nav-link" href="/about">About</a>
+                    <a class="nav-link" href="/login">Login</a>
+                    <a class="nav-link is-current" href="/signup">Sign Up</a>
+                </nav>
+            </div>
+        </header>
+
+        <main class="auth-main">
+            <section class="auth-copy" aria-label="Intro">
+                <span class="eyebrow">New Account</span>
+                <h1>Create your <span>Hollowside account.</span></h1>
+                <p>
+                    Set up your account now so the site, news system, and future
+                    HollowEngine services all have one clean identity to build on.
+                </p>
+
+                <ul class="feature-list">
+                    <li>Reserve your identity in the Hollowside ecosystem early.</li>
+                    <li>Get ready for future account verification and role access.</li>
+                    <li>Use one place for studio updates, support, and engine-connected features.</li>
+                </ul>
+            </section>
+
+            <section class="auth-card" aria-labelledby="signup-heading">
+                <div class="auth-card-header">
+                    <h2 id="signup-heading">Create Account</h2>
+                    <p>This is the visual shell for now. The form and social providers will be wired up after the backend is ready.</p>
+                </div>
+
+                <div class="social-stack">
+                    <button class="social-button" type="button">
+                        <span class="social-mark">G</span>
+                        <span>Continue with Google</span>
+                    </button>
+                    <button class="social-button" type="button">
+                        <span class="social-mark">A</span>
+                        <span>Continue with Apple</span>
+                    </button>
+                </div>
+
+                <div class="auth-divider">Or create an account with email</div>
+
+                <form class="auth-form" action="#" method="get">
+                    <div class="field">
+                        <label for="signup-username">Username</label>
+                        <input id="signup-username" name="username" type="text" placeholder="Choose a username">
+                    </div>
+
+                    <div class="field">
+                        <label for="signup-email">Email</label>
+                        <input id="signup-email" name="email" type="email" placeholder="Enter your email">
+                    </div>
+
+                    <div class="field">
+                        <label for="signup-password">Password</label>
+                        <input id="signup-password" name="password" type="password" placeholder="Create a password">
+                    </div>
+
+                    <div class="field">
+                        <label for="signup-confirm-password">Confirm Password</label>
+                        <input id="signup-confirm-password" name="confirm-password" type="password" placeholder="Re-enter your password">
+                    </div>
+
+                    <div class="auth-consent">
+                        <label class="auth-checkbox" for="signup-consent">
+                            <input id="signup-consent" type="checkbox">
+                            <span>I agree to the Terms and Privacy Policy.</span>
+                        </label>
+                    </div>
+
+                    <button class="auth-button" type="button">Create Account</button>
+                </form>
+
+                <p class="auth-footnote">
+                    Already have an account?
+                    <a class="auth-link" href="/login">Log in here!</a>
+                </p>
+            </section>
+        </main>
+    </div>
+</body>
+</html>
