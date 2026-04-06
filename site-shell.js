@@ -139,6 +139,9 @@ document.addEventListener("DOMContentLoaded", function () {
             adminContext.can_manage_role_permissions ||
             adminContext.can_manage_account_permissions
         );
+        var publicProfileHref = profile && profile.account_id
+            ? "/profile?id=" + encodeURIComponent(profile.account_id)
+            : "/account";
 
         var shell = document.createElement("div");
         var displayName = window.HollowsideAuth.escapeHtml(getDisplayName(profile, user));
@@ -161,6 +164,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     '<span class="nav-menu-role">' + roleLabel + "</span>" +
                 "</div>" +
                 '<div class="nav-menu-actions">' +
+                    getMenuLink("View full profile", publicProfileHref, "public") +
                     getMenuLink("Browse members", "/directory", "search") +
                     getMenuLink("Account settings", "/account", "profile") +
                     getMenuLink("Notifications", "/account#future", "soon") +
