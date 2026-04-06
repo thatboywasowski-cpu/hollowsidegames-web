@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Password | Hollowside Games</title>
+    <meta name="description" content="Reset your Hollowside Games password.">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/auth.css">
+</head>
+<body>
+    <div class="page-shell">
+        <div class="dust-layer" aria-hidden="true"></div>
+
+        <header class="site-header">
+            <div class="site-header-bar">
+                <a class="brand" href="/">
+                    <span class="brand-mark">H</span>
+                    <span class="brand-text">
+                        <strong>Hollowside Games</strong>
+                    </span>
+                </a>
+
+                <nav class="nav-links" aria-label="Primary">
+                    <a class="nav-link" href="/">Home</a>
+                    <a class="nav-link" href="/help">Help</a>
+                    <a class="nav-link" href="/news">News</a>
+                    <a class="nav-link" href="/about">About</a>
+                    <a class="nav-link is-current" href="/login">Login</a>
+                    <a class="nav-link" href="/signup">Sign Up</a>
+                </nav>
+            </div>
+        </header>
+
+        <main class="auth-main">
+            <section class="auth-copy" aria-label="Intro">
+                <span class="eyebrow">Password Reset</span>
+                <h1>Get back into <span>your account.</span></h1>
+                <p>
+                    Request a password reset email, then come back here from the link
+                    to set a new password for your Hollowside account.
+                </p>
+
+                <ul class="feature-list">
+                    <li>Request a reset link from your Hollowside email sender.</li>
+                    <li>Open the recovery link and set a new password here.</li>
+                    <li>Return to login once the password change is complete.</li>
+                </ul>
+            </section>
+
+            <section class="auth-card" aria-labelledby="reset-heading">
+                <div class="auth-card-header">
+                    <h2 id="reset-heading">Reset Password</h2>
+                    <p>Use the email request first, then return from the recovery link to create a new password.</p>
+                </div>
+
+                <p class="auth-status" id="reset-status" hidden></p>
+
+                <div class="auth-section" id="reset-request-section">
+                    <form class="auth-form" id="reset-request-form" action="#" method="post">
+                        <div class="field">
+                            <label for="reset-email">Email Address</label>
+                            <input id="reset-email" name="email" type="email" placeholder="Enter your email address">
+                        </div>
+
+                        <button class="auth-button" type="submit">Send Reset Email</button>
+                    </form>
+
+                    <p class="auth-footnote">
+                        Remembered your password?
+                        <a class="auth-link" href="/login">Go back to login.</a>
+                    </p>
+                </div>
+
+                <div class="auth-section" id="reset-update-section" hidden>
+                    <form class="auth-form" id="reset-update-form" action="#" method="post">
+                        <div class="field">
+                            <label for="reset-new-password">New Password</label>
+                            <input id="reset-new-password" name="new-password" type="password" placeholder="Enter a new password">
+                        </div>
+
+                        <div class="field">
+                            <label for="reset-confirm-password">Confirm Password</label>
+                            <input id="reset-confirm-password" name="confirm-password" type="password" placeholder="Re-enter your new password">
+                        </div>
+
+                        <button class="auth-button" type="submit">Update Password</button>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="/supabase-config.js"></script>
+    <script defer src="/auth-app.js"></script>
+    <script defer src="/reset-password/reset-password.js"></script>
+</body>
+</html>
