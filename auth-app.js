@@ -98,10 +98,6 @@
         }
     }
 
-    function socialComingSoon(statusTarget) {
-        setStatus(statusTarget, "Google and Apple sign-in will be connected after those providers are set up in Supabase.", "info");
-    }
-
     function escapeHtml(value) {
         return String(value || "")
             .replace(/&/g, "&amp;")
@@ -210,18 +206,18 @@
                 .from("profiles")
                 .insert({
                     id: user.id,
-                username: username,
-                display_name: displayName,
-                bio: "",
-                account_id: createAccountId(),
-                role_label: "Member",
-                website_url: "",
-                location: "",
-                avatar_url: "",
-                avatar_path: ""
-            })
-            .select("*")
-            .single();
+                    username: username,
+                    display_name: displayName,
+                    bio: "",
+                    account_id: createAccountId(),
+                    role_label: "Member",
+                    website_url: "",
+                    location: "",
+                    avatar_url: "",
+                    avatar_path: ""
+                })
+                .select("*")
+                .single();
 
             if (!insertResult.error) {
                 return insertResult;
@@ -302,6 +298,49 @@
         }
     }
 
+    function normalizeRedirectPath(path) {
+        if (!path || typeof path !== "string") {
+            return "/";
+        }
+
+        if (path.indexOf("http://") === 0 || path.indexOf("https://") === 0) {
+            return "/";
+        }
+
+        if (path.charAt(0) !== "/") {
+            return "/";
+        }
+
+        return path;
+    }
+
+    async function startOAuthSignIn(provider, options) {
+        var statusTarget = options && options.statusTarget;
+        var redirectPath = normalizeRedirectPath(options && options.redirectPath ? options.redirectPath : "/");
+
+        try {
+            var supabase = createClient({ rememberMe: true });
+            var response = await supabase.auth.signInWithOAuth({
+                provider: provider,
+                options: {
+                    redirectTo: window.location.origin + redirectPath
+                }
+            });
+
+            if (response.error) {
+                throw response.error;
+            }
+        } catch (error) {
+            setStatus(
+                statusTarget,
+                error && error.message
+                    ? error.message
+                    : "That sign-in provider is not ready yet. Double-check that it is enabled in Supabase.",
+                "error"
+            );
+        }
+    }
+
     window.HollowsideAuth = {
         readConfig: readConfig,
         isConfigured: isConfigured,
@@ -309,7 +348,6 @@
         clearStoredSession: clearStoredSession,
         setStatus: setStatus,
         setBusy: setBusy,
-        socialComingSoon: socialComingSoon,
         sanitizeUsername: sanitizeUsername,
         fallbackUsername: fallbackUsername,
         fallbackDisplayName: fallbackDisplayName,
@@ -320,6 +358,8 @@
         formatCompactCount: formatCompactCount,
         formatCountLabel: formatCountLabel,
         getVerificationBadge: getVerificationBadge,
-        touchActivity: touchActivity
+        touchActivity: touchActivity,
+        normalizeRedirectPath: normalizeRedirectPath,
+        startOAuthSignIn: startOAuthSignIn
     };
 })();
