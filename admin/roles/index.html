@@ -73,6 +73,37 @@
                     </article>
 
                     <article class="account-card">
+                        <h2>Verification</h2>
+                        <p>Owner and Co-Owner can manually grant or remove the Hollowside verification badge on accounts below them.</p>
+
+                        <form class="account-form" id="verification-form" action="#" method="post">
+                            <div class="account-form-grid">
+                                <div class="field">
+                                    <label for="verification-account-id">Target Account ID</label>
+                                    <input id="verification-account-id" type="text" placeholder="hsg_XXXXXXXXXX">
+                                </div>
+
+                                <div class="field">
+                                    <label for="verification-enabled">Manual Verification</label>
+                                    <select id="verification-enabled">
+                                        <option value="true">Verified</option>
+                                        <option value="false">Not Verified</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label for="verification-note">Verification Note</label>
+                                <textarea id="verification-note" maxlength="240" placeholder="Internal note about why this account was manually verified."></textarea>
+                            </div>
+
+                            <div class="account-actions">
+                                <button class="account-button primary" type="submit">Update Verification</button>
+                            </div>
+                        </form>
+                    </article>
+
+                    <article class="account-card">
                         <h2>Role Permission Matrix</h2>
                         <p>These are the default permissions for a role. Manual account overrides can still replace them later.</p>
 
