@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!window.HollowsideAuth.isConfigured()) {
         window.HollowsideAuth.setStatus(
             status,
-            "Supabase is not connected yet. Add your project URL and publishable key in /supabase-config.js to enable signup.",
+            "Supabase is not connected yet. Add your project URL and anon key in /supabase-config.js to enable signup.",
             "error"
         );
         return;
@@ -91,9 +91,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 "success"
             );
         } catch (error) {
+            var message = error && error.message === "Database error saving new user"
+                ? "The account database is still being repaired on the Supabase side. Run the latest repair SQL, wait a few seconds, and try sign-up again."
+                : (error && error.message ? error.message : "Something went wrong while creating your account.");
+
             window.HollowsideAuth.setStatus(
                 status,
-                error && error.message ? error.message : "Something went wrong while creating your account.",
+                message,
                 "error"
             );
         } finally {
