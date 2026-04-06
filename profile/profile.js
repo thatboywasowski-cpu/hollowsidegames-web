@@ -98,6 +98,66 @@ document.addEventListener("DOMContentLoaded", function () {
         element.title = String(value || 0);
     }
 
+    async function submitReport(targetType, targetAccountId, targetPostId) {
+    if (!viewerContext) {
+        window.location.href = "/login?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
+        return;
+    }
+
+    var reason = window.prompt("Report reason:", targetType === "post" ? "Spam" : "Harassment");
+    if (reason === null) {
+        return;
+    }
+
+    var details = window.prompt("Extra details (optional):", "") || "";
+
+    try {
+        var response = await supabase.rpc("create_report", {
+            p_target_type: targetType,
+            p_target_account_id: targetAccountId,
+            p_target_post_id: targetPostId,
+            p_reason: reason.trim(),
+            p_details: details.trim()
+        });
+
+        if (response.error) {
+            throw response.error;
+        }
+
+        window.HollowsideAuth.setStatus(status, "Report submitted.", "success");
+    } catch (error) {
+        window.HollowsideAuth.setStatus(
+            status,
+            error && error.message ? error.message : "Something went wrong while submitting the report.",
+            "error"
+        );
+    }
+}
+
+function setRestrictionChip(card) {
+    var existing = document.getElementById("profile-restriction-chip");
+    if (existing) {
+        existing.remove();
+    }
+
+    if (!chipRow || !card.public_restriction_label) {
+        return;
+    }
+
+    var chip = document.createElement("span");
+    chip.className = "account-chip";
+    chip.id = "profile-restriction-chip";
+
+    if (viewerContext && viewerContext.account_id === card.account_id && card.public_restriction_label === "Suspended" && card.restriction_until) {
+        chip.textContent = "Suspended Until: " + new Date(card.restriction_until).toLocaleString();
+    } else {
+        chip.textContent = card.public_restriction_label;
+    }
+
+    chipRow.appendChild(chip);
+}
+
+
     function renderActions(card) {
         actions.innerHTML = "";
 
@@ -113,6 +173,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         var followLabel = card.viewer_is_following ? "Unfollow" : "Follow";
         var followButton = document.createElement("button");
+
         followButton.className = "account-button primary";
         followButton.type = "button";
         followButton.textContent = followLabel;
@@ -127,6 +188,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (response.error) {
                     throw response.error;
                 }
+}
+
 
                 var next = response.data && response.data[0];
                 if (next) {
@@ -141,7 +204,116 @@ document.addEventListener("DOMContentLoaded", function () {
                     updateStatBlock(friendCount, card.friend_count);
                 }
 
-                renderActions(card);
+                function renderActions(card) {
+    actions.innerHTML = "";
+
+    if (viewerContext && viewerContext.account_id === card.account_id) {
+        actions.innerHTML = '<a class="account-button primary" href="/account">Open Account Settings</a>';
+        return;
+    }
+
+    if (!viewerContext) {
+        actions.innerHTML = '<a class="account-button primary" href="/login?redirect=' + encodeURIComponent('/profile?id=' + card.account_id) + '">Log in to follow</a>';
+        return;
+    }
+
+    var followLabel = card.viewer_is_following ? "Unfollow" : "Follow";
+    var followButton = document.createElement("button");
+    followButton.className = "account-button primary";
+    followButton.type = "button";
+    followButton.textContent = followLabel;
+
+    followButton.addEventListener("click", async function () {
+        try {
+            var response = await supabase.rpc("set_follow_state", {
+                p_target_account_id: accountId,
+                p_follow: !card.viewer_is_following
+            });
+
+            if (response.error) {
+                throw response.error;
+            }
+
+            var next = response.data && response.data[0];
+            if (next) {
+                card.viewer_is_following = next.viewer_is_following;
+                card.viewer_is_followed_by = next.viewer_is_followed_by;
+                card.viewer_is_friend = next.viewer_is_friend;
+                card.follower_count = next.follower_count;
+                card.following_count = next.following_count;
+                card.friend_count = next.friend_count;
+                updateStatBlock(followerCount, card.follower_count);
+                updateStatBlock(followingCount, card.following_count);
+                updateStatBlock(friendCount, card.friend_count);
+            }
+
+            renderActions(card);
+            loadConnections("followers", followers);
+            loadConnections("following", following);
+            loadConnections("friends", friends);
+        } catch (error) {
+            window.HollowsideAuth.setStatus(
+                status,
+                error && error.message ? error.message : "Something went wrong while updating the follow state.",
+                "error"
+            );
+        }
+    });
+
+    actions.appendChild(followButton);
+
+    var reportButton = document.createElement("button");
+    reportButton.className = "account-button";
+    reportButton.type = "button";
+    reportButton.textContent = "Report";
+    reportButton.addEventListener("click", function () {
+        submitReport("account", card.account_id, null);
+    });
+    actions.appendChild(reportButton);
+
+    var blockButton = document.createElement("button");
+    blockButton.className = "account-button";
+    blockButton.type = "button";
+    blockButton.textContent = "Block";
+    blockButton.addEventListener("click", async function () {
+        try {
+            var response = await supabase.rpc("set_block_state", {
+                p_target_account_id: card.account_id,
+                p_block: true,
+                p_reason: "Blocked from profile view"
+            });
+
+            if (response.error) {
+                throw response.error;
+            }
+
+            window.HollowsideAuth.setStatus(status, "Account blocked. You can manage blocked accounts in Safety settings.", "success");
+            window.setTimeout(function () {
+                window.location.href = "/account#safety";
+            }, 650);
+        } catch (error) {
+            window.HollowsideAuth.setStatus(
+                status,
+                error && error.message ? error.message : "Something went wrong while blocking that account.",
+                "error"
+            );
+        }
+    });
+    actions.appendChild(blockButton);
+
+    if (card.viewer_is_friend) {
+        var friendChip = document.createElement("span");
+        friendChip.className = "account-chip";
+        friendChip.textContent = "Friends";
+        actions.appendChild(friendChip);
+    } else if (card.viewer_is_followed_by) {
+        var followsBackChip = document.createElement("span");
+        followsBackChip.className = "account-chip";
+        followsBackChip.textContent = "Follows You";
+        actions.appendChild(followsBackChip);
+    }
+}
+
                 loadConnections("followers", followers);
                 loadConnections("following", following);
                 loadConnections("friends", friends);
@@ -382,12 +554,21 @@ document.addEventListener("DOMContentLoaded", function () {
         var editToggle = event.target.hasAttribute("data-profile-edit-toggle");
         var editCancel = event.target.hasAttribute("data-profile-edit-cancel");
         var deletePost = event.target.hasAttribute("data-profile-delete");
+        var reportPost = event.target.getAttribute("data-report-post");
+var reportAuthor = event.target.getAttribute("data-post-author");
+
 
         if (editToggle || editCancel) {
             var host = event.target.closest("[data-post-id]");
             if (!host) {
                 return;
             }
+
+            if (reportPost) {
+    submitReport("post", reportAuthor || accountId, reportPost);
+    return;
+}
+
 
             var editForm = host.querySelector("[data-profile-edit-form]");
             if (editForm) {
@@ -609,6 +790,7 @@ document.addEventListener("DOMContentLoaded", function () {
             role.textContent = profileCard.role_label;
             memberSince.textContent = "Member since " + new Date(profileCard.member_since).toLocaleDateString();
             bio.textContent = profileCard.bio || "No bio yet.";
+            setRestrictionChip(profileCard);
             updateStatBlock(followerCount, profileCard.follower_count);
             updateStatBlock(followingCount, profileCard.following_count);
             updateStatBlock(friendCount, profileCard.friend_count);
@@ -625,7 +807,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 loadProfilePosts()
             ]);
 
-            window.HollowsideAuth.setStatus(status, "", "info");
+            window.HollowsideAuth.setStatus(status, "That profile is unavailable right now. If one of you blocked the other, it will stay hidden here.", "error");
         } catch (error) {
             window.HollowsideAuth.setStatus(
                 status,
