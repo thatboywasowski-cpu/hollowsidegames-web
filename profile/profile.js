@@ -4,7 +4,9 @@ document.addEventListener("DOMContentLoaded", function () {
     var accountId = params.get("id");
     var avatar = document.getElementById("profile-avatar");
     var displayName = document.getElementById("profile-display-name");
+    var displayBadge = document.getElementById("profile-display-badge");
     var username = document.getElementById("profile-username");
+    var usernameBadge = document.getElementById("profile-username-badge");
     var role = document.getElementById("profile-role");
     var memberSince = document.getElementById("profile-member-since");
     var bio = document.getElementById("profile-bio");
@@ -15,6 +17,12 @@ document.addEventListener("DOMContentLoaded", function () {
     var followers = document.getElementById("profile-followers");
     var following = document.getElementById("profile-following");
     var friends = document.getElementById("profile-friends");
+    var composerCard = document.getElementById("profile-composer-card");
+    var postForm = document.getElementById("profile-post-form");
+    var postBody = document.getElementById("profile-post-body");
+    var postMedia = document.getElementById("profile-post-media");
+    var postCopy = document.getElementById("profile-post-copy");
+    var postFeed = document.getElementById("profile-post-feed");
 
     if (!window.HollowsideAuth.isConfigured()) {
         window.HollowsideAuth.setStatus(status, "Supabase is not connected yet.", "error");
@@ -27,14 +35,11 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     var supabase = window.HollowsideAuth.createClient();
+    var viewerContext = null;
+    var profileCard = null;
 
     function escapeHtml(value) {
-        return String(value || "")
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#39;");
+        return window.HollowsideAuth.escapeHtml(value);
     }
 
     function setAvatar(card) {
@@ -59,13 +64,14 @@ document.addEventListener("DOMContentLoaded", function () {
             var avatarMarkup = card.avatar_url
                 ? '<span class="account-avatar-preview"><img src="' + escapeHtml(card.avatar_url) + '" alt="Profile picture"></span>'
                 : '<span class="account-avatar-preview">' + window.HollowsideAuth.getInitials(card, null) + "</span>";
+            var badge = window.HollowsideAuth.getVerificationBadge(card, "Verified Hollowside account");
 
             return (
                 '<a class="profile-mini-card" href="/profile?id=' + encodeURIComponent(card.account_id) + '">' +
                     avatarMarkup +
                     '<div class="profile-mini-copy">' +
                         '<strong>' + escapeHtml(card.display_name) + '</strong>' +
-                        '<span>@' + escapeHtml(card.username) + '</span>' +
+                        '<span class="identity-line">@' + escapeHtml(card.username) + badge + '</span>' +
                         '<p>' + escapeHtml(card.role_label) + '</p>' +
                     '</div>' +
                 '</a>'
@@ -87,15 +93,20 @@ document.addEventListener("DOMContentLoaded", function () {
         renderConnectionList(target, response.data || []);
     }
 
-    function renderActions(card, viewerAccountId) {
+    function updateStatBlock(element, value) {
+        element.textContent = window.HollowsideAuth.formatCompactCount(value);
+        element.title = String(value || 0);
+    }
+
+    function renderActions(card) {
         actions.innerHTML = "";
 
-        if (viewerAccountId && viewerAccountId === card.account_id) {
+        if (viewerContext && viewerContext.account_id === card.account_id) {
             actions.innerHTML = '<a class="account-button primary" href="/account">Open Account Settings</a>';
             return;
         }
 
-        if (!viewerAccountId) {
+        if (!viewerContext) {
             actions.innerHTML = '<a class="account-button primary" href="/login?redirect=' + encodeURIComponent('/profile?id=' + card.account_id) + '">Log in to follow</a>';
             return;
         }
@@ -125,12 +136,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     card.follower_count = next.follower_count;
                     card.following_count = next.following_count;
                     card.friend_count = next.friend_count;
-                    followerCount.textContent = card.follower_count;
-                    followingCount.textContent = card.following_count;
-                    friendCount.textContent = card.friend_count;
+                    updateStatBlock(followerCount, card.follower_count);
+                    updateStatBlock(followingCount, card.following_count);
+                    updateStatBlock(friendCount, card.friend_count);
                 }
 
-                renderActions(card, viewerAccountId);
+                renderActions(card);
                 loadConnections("followers", followers);
                 loadConnections("following", following);
                 loadConnections("friends", friends);
@@ -158,54 +169,61 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    async function loadProfile() {
-        try {
-            window.HollowsideAuth.setStatus(status, "Loading profile...", "info");
-
-            var viewerContextResponse = await supabase.rpc("get_my_role_context");
-            var viewerContext = viewerContextResponse.data && viewerContextResponse.data[0] ? viewerContextResponse.data[0] : null;
-
-            var response = await supabase.rpc("get_profile_view", {
-                p_account_id: accountId
-            });
-
-            if (response.error) {
-                throw response.error;
-            }
-
-            var card = response.data && response.data[0];
-            if (!card) {
-                window.HollowsideAuth.setStatus(status, "That account could not be found.", "error");
-                return;
-            }
-
-            document.title = card.display_name + " | Hollowside Games";
-            setAvatar(card);
-            displayName.textContent = card.display_name;
-            username.textContent = "@" + card.username;
-            role.textContent = card.role_label;
-            memberSince.textContent = "Member since " + new Date(card.member_since).toLocaleDateString();
-            bio.textContent = card.bio || "No bio yet.";
-            followerCount.textContent = card.follower_count;
-            followingCount.textContent = card.following_count;
-            friendCount.textContent = card.friend_count;
-            renderActions(card, viewerContext && viewerContext.account_id);
-
-            await Promise.all([
-                loadConnections("followers", followers),
-                loadConnections("following", following),
-                loadConnections("friends", friends)
-            ]);
-
-            window.HollowsideAuth.setStatus(status, "", "info");
-        } catch (error) {
-            window.HollowsideAuth.setStatus(
-                status,
-                error && error.message ? error.message : "Something went wrong while loading this profile.",
-                "error"
-            );
+    function renderMedia(items) {
+        if (!items.length) {
+            return "";
         }
+
+        return (
+            '<div class="post-media-grid">' +
+                items.map(function (item) {
+                    if (item.media_type === "video") {
+                        return '<div class="post-media-item"><video controls preload="metadata" src="' + escapeHtml(item.media_url) + '"></video></div>';
+                    }
+
+                    return '<div class="post-media-item"><img src="' + escapeHtml(item.media_url) + '" alt="Post attachment"></div>';
+                }).join("") +
+            "</div>"
+        );
     }
 
-    loadProfile();
-});
+    function renderComments(items) {
+        if (!items.length) {
+            return '<p class="post-empty">No comments yet.</p>';
+        }
+
+        return (
+            '<div class="comment-list">' +
+                items.map(function (comment) {
+                    var badge = window.HollowsideAuth.getVerificationBadge({
+                        is_verified: comment.author_is_verified,
+                        verification_mode: comment.author_verification_mode
+                    }, "Verified Hollowside account");
+
+                    return (
+                        '<article class="comment-card">' +
+                            '<div class="comment-meta">' +
+                                '<strong>' + escapeHtml(comment.author_display_name) + '</strong>' +
+                                '<span class="identity-line">@' + escapeHtml(comment.author_username) + badge + '</span>' +
+                                '<span>' + escapeHtml(new Date(comment.created_at).toLocaleString()) + '</span>' +
+                            '</div>' +
+                            '<p>' + escapeHtml(comment.body) + '</p>' +
+                        '</article>'
+                    );
+                }).join("") +
+            "</div>"
+        );
+    }
+
+    async function uploadPostMediaFiles(postId, files) {
+        if (!viewerContext || !viewerContext.id || !files.length) {
+            return;
+        }
+
+        var uploads = [];
+
+        files.forEach(function (file, index) {
+            uploads.push((async function () {
+                var extension = (file.name.split(".").pop() || "bin").toLowerCase();
+                var path = viewerContext.id + "/posts/" + postId + "/" + Date.now() + "-" + index + "." + extension;
+                var mediaType = file.type.indexOf("video/") === 
