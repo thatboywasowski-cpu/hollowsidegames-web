@@ -13,13 +13,17 @@ document.addEventListener("DOMContentLoaded", function () {
     var passwordInput = document.getElementById("account-new-password");
     var confirmPasswordInput = document.getElementById("account-confirm-password");
     var previewName = document.getElementById("account-preview-name");
+    var previewBadge = document.getElementById("account-preview-badge");
     var previewHandle = document.getElementById("account-preview-handle");
+    var previewHandleBadge = document.getElementById("account-preview-handle-badge");
     var previewRole = document.getElementById("account-preview-role");
     var previewId = document.getElementById("account-preview-id");
     var publicId = document.getElementById("account-public-id");
     var email = document.getElementById("account-email");
     var role = document.getElementById("account-role");
     var created = document.getElementById("account-created");
+    var usernameChange = document.getElementById("account-username-change");
+    var verificationState = document.getElementById("account-verification-state");
     var verified = document.getElementById("account-verified");
 
     if (!window.HollowsideAuth.isConfigured()) {
@@ -34,6 +38,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var supabase = window.HollowsideAuth.createClient();
     var currentUser = null;
     var currentProfile = null;
+    var accountContext = null;
 
     function formatDate(value) {
         if (!value) {
@@ -72,15 +77,24 @@ document.addEventListener("DOMContentLoaded", function () {
         var username = (profile && profile.username) ? "@" + profile.username : "@member";
         var roleLabel = (profile && profile.role_label) || "Member";
         var accountId = (profile && profile.account_id) || "Pending";
+        var verificationLabel = accountContext && accountContext.is_verified
+            ? (accountContext.verification_mode === "automatic" ? "Automatically verified" : "Manually verified")
+            : "Not verified";
 
         previewName.textContent = displayName;
         previewHandle.textContent = username;
+        previewBadge.innerHTML = "";
+        previewHandleBadge.innerHTML = window.HollowsideAuth.getVerificationBadge(accountContext, "Verified Hollowside account");
         previewRole.textContent = roleLabel;
         previewId.textContent = accountId;
         publicId.textContent = accountId;
         email.textContent = user.email || "No email found";
         role.textContent = roleLabel;
         created.textContent = formatDate((profile && profile.created_at) || user.created_at);
+        usernameChange.textContent = profile && profile.username_change_available_at
+            ? "Available " + formatDate(profile.username_change_available_at)
+            : "Not available yet";
+        verificationState.textContent = verificationLabel;
         verified.textContent = user.email_confirmed_at ? "Confirmed" : "Pending confirmation";
         setAvatar(profile, user);
     }
@@ -127,6 +141,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 "error"
             );
             return;
+        }
+
+        try {
+            var contextResponse = await supabase.rpc("get_my_account_context");
+            if (contextResponse.data && contextResponse.data[0]) {
+                accountContext = contextResponse.data[0];
+            }
+        } catch (error) {
+            accountContext = null;
         }
 
         fillForm(currentUser, ensured.data);
@@ -183,6 +206,12 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             currentProfile = updateResult.data;
+            try {
+                var contextResponse = await supabase.rpc("get_my_account_context");
+                if (contextResponse.data && contextResponse.data[0]) {
+                    accountContext = contextResponse.data[0];
+                }
+            } catch (error) {}
             fillForm(currentUser, currentProfile);
             emitProfileUpdate(currentProfile);
             window.HollowsideAuth.setStatus(status, "Profile picture updated.", "success");
@@ -241,6 +270,12 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             currentProfile = updateResult.data;
+            try {
+                var latestContext = await supabase.rpc("get_my_account_context");
+                if (latestContext.data && latestContext.data[0]) {
+                    accountContext = latestContext.data[0];
+                }
+            } catch (error) {}
             fillForm(currentUser, currentProfile);
             emitProfileUpdate(currentProfile);
             window.HollowsideAuth.setStatus(status, "Account profile saved.", "success");
