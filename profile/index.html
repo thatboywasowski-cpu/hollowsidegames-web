@@ -30,7 +30,6 @@
                     <a class="nav-link" href="/directory">Members</a>
                     <a class="nav-link" href="/login">Login</a>
                     <a class="nav-link" href="/signup">Sign Up</a>
-                    <a class="nav-link" href="/directory">Members</a>
                 </nav>
             </div>
         </header>
@@ -41,55 +40,23 @@
             <section class="account-layout">
                 <div class="account-stack">
                     <article class="account-card">
-                        <article class="composer-card" id="profile-composer-card" hidden>
-    <h2>Post To Your Profile</h2>
-    <p class="composer-note">Personal profile posts are short updates from your own account. Add text and optional image or video attachments.</p>
-
-    <form class="composer-form" id="profile-post-form" action="#" method="post">
-        <div class="field">
-            <label for="profile-post-body">Post</label>
-            <textarea class="composer-textarea" id="profile-post-body" maxlength="5000" placeholder="Share a quick update with people following your account."></textarea>
-        </div>
-
-        <div class="field">
-            <label for="profile-post-media">Attachments</label>
-            <input id="profile-post-media" type="file" accept="image/*,video/*" multiple>
-            <p class="file-hint">Images and videos are supported. Keep uploads under 100 MB each for now.</p>
-        </div>
-
-        <div class="account-actions">
-            <button class="account-button primary" type="submit">Publish Profile Post</button>
-        </div>
-    </form>
-</article>
-
-<article class="account-card">
-    <div class="section-header">
-        <h3>Posts</h3>
-        <p id="profile-post-copy">Loading posts...</p>
-    </div>
-
-    <div class="post-feed" id="profile-post-feed"></div>
-</article>
-
                         <div class="account-profile-hero">
                             <div class="account-avatar-preview" id="profile-avatar">H</div>
 
                             <div class="account-profile-copy">
-    <strong class="verified-name" id="profile-display-name-row">
-        <span id="profile-display-name">Loading...</span>
-        <span id="profile-display-badge"></span>
-    </strong>
-    <span class="identity-line" id="profile-username-row">
-        <span id="profile-username">@loading</span>
-        <span id="profile-username-badge"></span>
-    </span>
-    <div class="account-chip-row">
-        <span class="account-chip" id="profile-role">Loading role...</span>
-        <span class="account-chip" id="profile-member-since">Loading date...</span>
-    </div>
-</div>
-
+                                <strong class="verified-name" id="profile-display-name-row">
+                                    <span id="profile-display-name">Loading...</span>
+                                    <span id="profile-display-badge"></span>
+                                </strong>
+                                <span class="identity-line" id="profile-username-row">
+                                    <span id="profile-username">@loading</span>
+                                    <span id="profile-username-badge"></span>
+                                </span>
+                                <div class="account-chip-row">
+                                    <span class="account-chip" id="profile-role">Loading role...</span>
+                                    <span class="account-chip" id="profile-member-since">Loading date...</span>
+                                </div>
+                            </div>
                         </div>
 
                         <p class="lead" id="profile-bio">Loading profile...</p>
@@ -110,6 +77,37 @@
                         </div>
 
                         <div class="profile-actions" id="profile-actions"></div>
+                    </article>
+
+                    <article class="composer-card" id="profile-composer-card" hidden>
+                        <h2>Post To Your Profile</h2>
+                        <p class="composer-note">Personal profile posts are short updates from your own account. Add text and optional image or video attachments.</p>
+
+                        <form class="composer-form" id="profile-post-form" action="#" method="post">
+                            <div class="field">
+                                <label for="profile-post-body">Post</label>
+                                <textarea class="composer-textarea" id="profile-post-body" maxlength="5000" placeholder="Share a quick update with people following your account."></textarea>
+                            </div>
+
+                            <div class="field">
+                                <label for="profile-post-media">Attachments</label>
+                                <input id="profile-post-media" type="file" accept="image/*,video/*" multiple>
+                                <p class="file-hint">Images and videos are supported. Keep uploads under 100 MB each for now.</p>
+                            </div>
+
+                            <div class="account-actions">
+                                <button class="account-button primary" type="submit">Publish Profile Post</button>
+                            </div>
+                        </form>
+                    </article>
+
+                    <article class="account-card">
+                        <div class="section-header">
+                            <h3>Posts</h3>
+                            <p id="profile-post-copy">Loading posts...</p>
+                        </div>
+
+                        <div class="post-feed" id="profile-post-feed"></div>
                     </article>
                 </div>
 
