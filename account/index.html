@@ -54,13 +54,20 @@
                             <div class="account-avatar-preview" id="account-avatar-preview">H</div>
 
                             <div class="account-profile-copy">
-                                <strong id="account-preview-name">Hollowside Member</strong>
-                                <span id="account-preview-handle">@member</span>
-                                <div class="account-chip-row">
-                                    <span class="account-chip" id="account-preview-role">Member</span>
-                                    <span class="account-chip" id="account-preview-id">ID loading...</span>
-                                </div>
-                            </div>
+    <strong class="verified-name">
+        <span id="account-preview-name">Hollowside Member</span>
+        <span id="account-preview-badge"></span>
+    </strong>
+    <span class="identity-line">
+        <span id="account-preview-handle">@member</span>
+        <span id="account-preview-handle-badge"></span>
+    </span>
+    <div class="account-chip-row">
+        <span class="account-chip" id="account-preview-role">Member</span>
+        <span class="account-chip" id="account-preview-id">ID loading...</span>
+    </div>
+</div>
+
                         </div>
 
                         <form class="account-form" id="account-profile-form" action="#" method="post">
@@ -149,6 +156,11 @@
                                 <strong>Member Since</strong>
                                 <span id="account-created">Loading...</span>
                             </div>
+                            <div class="account-meta-item">
+    <strong>Verification</strong>
+    <span id="account-verification-state">Loading...</span>
+</div>
+
                             <div class="account-meta-item">
                                 <strong>Email Confirmed</strong>
                                 <span id="account-verified">Loading...</span>
