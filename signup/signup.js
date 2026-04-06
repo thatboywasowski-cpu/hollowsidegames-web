@@ -7,11 +7,14 @@ document.addEventListener("DOMContentLoaded", function () {
     var passwordInput = document.getElementById("signup-password");
     var confirmInput = document.getElementById("signup-confirm-password");
     var consentInput = document.getElementById("signup-consent");
-    var socialButtons = document.querySelectorAll("[data-social-placeholder]");
+    var socialButtons = document.querySelectorAll("[data-social-provider]");
 
     socialButtons.forEach(function (button) {
         button.addEventListener("click", function () {
-            window.HollowsideAuth.socialComingSoon(status);
+            window.HollowsideAuth.startOAuthSignIn(button.getAttribute("data-social-provider"), {
+                statusTarget: status,
+                redirectPath: "/account"
+            });
         });
     });
 
@@ -95,11 +98,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 ? "The account database is still being repaired on the Supabase side. Run the latest repair SQL, wait a few seconds, and try sign-up again."
                 : (error && error.message ? error.message : "Something went wrong while creating your account.");
 
-            window.HollowsideAuth.setStatus(
-                status,
-                message,
-                "error"
-            );
+            window.HollowsideAuth.setStatus(status, message, "error");
         } finally {
             window.HollowsideAuth.setBusy(form, false);
         }
