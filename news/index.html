@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -7,6 +6,8 @@
     <title>News | Hollowside Games</title>
     <meta name="description" content="Latest official news from Hollowside Games.">
     <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/auth.css">
+    <link rel="stylesheet" href="/account.css">
 </head>
 <body>
     <div class="page-shell">
@@ -26,60 +27,100 @@
                     <a class="nav-link" href="/help">Help</a>
                     <a class="nav-link is-current" href="/news">News</a>
                     <a class="nav-link" href="/about">About</a>
+                    <a class="nav-link" href="/directory">Members</a>
                     <a class="nav-link" href="/login">Login</a>
                     <a class="nav-link" href="/signup">Sign Up</a>
-                    <a class="nav-link" href="/directory">Members</a>
                 </nav>
             </div>
         </header>
 
         <main class="site-main">
+            <p class="page-status" id="news-status" hidden></p>
+
             <section class="hero-grid">
                 <article class="hero-card">
                     <div class="pill-row">
                         <span class="pill">Official News</span>
+                        <span class="pill">Staff Updates</span>
                     </div>
-                    <h1 class="page-heading">Latest from <span>Hollowside Games.</span></h1>
+                    <h1 class="page-heading">Studio dispatches, <span>sectioned and readable.</span></h1>
                     <p class="lead">
-                        This page is ready for future official posts, updates, announcements,
-                        and staff-authored news as the site grows.
+                        Official Hollowside news now has a clearer split between the quick-scroll archive
+                        and the full post view, so people can skim the latest updates or open the full story.
                     </p>
                 </article>
 
                 <aside class="content-card">
-                    <h3>What's Coming Here</h3>
+                    <h3>Publishing Rules</h3>
                     <ul class="list">
-                        <li>Official announcements</li>
-                        <li>Progress updates</li>
-                        <li>Feature rollouts and maintenance notes</li>
-                        <li>Later, role-tagged staff-authored posts</li>
+                        <li>Only accounts with `Able To Publish News` can publish here.</li>
+                        <li>Trusted Members and above can comment on full posts.</li>
+                        <li>Signed-in accounts can like or dislike from the short view and full view.</li>
+                        <li>Images and videos can be attached to official updates.</li>
                     </ul>
                 </aside>
             </section>
 
             <section class="section-block">
+                <div class="composer-card" id="news-composer-card" hidden>
+                    <h2>Publish Official News</h2>
+                    <p class="composer-note">
+                        This composer only appears for accounts that currently have the `Able To Publish News`
+                        permission. Subtitle, title, short description, and the full post body are all stored separately.
+                    </p>
+
+                    <form class="composer-form" id="news-post-form" action="#" method="post">
+                        <div class="composer-grid">
+                            <div class="field">
+                                <label for="news-post-subtitle">Subtitle</label>
+                                <input id="news-post-subtitle" type="text" maxlength="48" placeholder="COMING SOON">
+                            </div>
+
+                            <div class="field">
+                                <label for="news-post-title">Title</label>
+                                <input id="news-post-title" type="text" maxlength="120" placeholder="Official staff-authored posts">
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label for="news-post-summary">Short Description</label>
+                            <input id="news-post-summary" type="text" maxlength="240" placeholder="Future updates can show author names, roles, and trusted studio status.">
+                        </div>
+
+                        <div class="field">
+                            <label for="news-post-body">Full Description</label>
+                            <textarea class="composer-textarea" id="news-post-body" maxlength="12000" placeholder="Write the full post here."></textarea>
+                        </div>
+
+                        <div class="field">
+                            <label for="news-post-media">Attachments</label>
+                            <input id="news-post-media" type="file" accept="image/*,video/*" multiple>
+                            <p class="file-hint">Images and videos are supported. Keep uploads under 100 MB each for now.</p>
+                        </div>
+
+                        <div class="account-actions">
+                            <button class="account-button primary" type="submit">Publish News Post</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <section class="section-block">
                 <div class="section-header">
-                    <h2>Preview Posts</h2>
-                    <p>Placeholder cards for the future publishing system.</p>
+                    <h2>Latest Briefing</h2>
+                    <p id="news-featured-copy">Loading the newest official post...</p>
                 </div>
 
-                <div class="news-grid">
-                    <article class="news-card">
-                        <p class="meta">Studio Update</p>
-                        <h3>The Hollowside website is now live</h3>
-                        <p>The domain, page routing, and first visual shell are now online.</p>
-                    </article>
-                    <article class="news-card">
-                        <p class="meta">Accounts</p>
-                        <h3>Account system setup is coming next</h3>
-                        <p>The website is moving toward real login and signup functionality.</p>
-                    </article>
-                    <article class="news-card">
-                        <p class="meta">Coming Soon</p>
-                        <h3>Official staff-authored posts</h3>
-                        <p>Future updates can show author names, roles, and trusted studio status.</p>
-                    </article>
+                <div id="news-featured"></div>
+            </section>
+
+            <section class="section-block">
+                <div class="section-header">
+                    <h2>Post Archive</h2>
+                    <p id="news-archive-copy">Swipe or scroll sideways to look through past studio posts.</p>
                 </div>
+
+                <div class="news-rail" id="news-rail"></div>
             </section>
         </main>
 
@@ -90,9 +131,11 @@
             </div>
         </footer>
     </div>
+
     <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script defer src="/supabase-config.js"></script>
-<script defer src="/auth-app.js"></script>
-<script defer src="/site-shell.js"></script>
+    <script defer src="/supabase-config.js"></script>
+    <script defer src="/auth-app.js"></script>
+    <script defer src="/site-shell.js"></script>
+    <script defer src="/news/news.js"></script>
 </body>
 </html>
