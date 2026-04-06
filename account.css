@@ -401,3 +401,55 @@
     border-color: rgba(255, 255, 255, 0.3);
     box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.05);
 }
+
+.account-tab-bar {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.2rem;
+}
+
+.account-tab {
+    min-height: 3rem;
+    padding: 0.8rem 1rem;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+    transition: transform 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+.account-tab:hover,
+.account-tab:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.account-tab.is-active {
+    background: linear-gradient(180deg, #ffffff 0%, #d8d8d8 100%);
+    color: #050505;
+    font-weight: 700;
+}
+
+.account-panel[hidden] {
+    display: none;
+}
+
+.notification-card[data-severity="warning"] {
+    border-color: rgba(255, 191, 118, 0.24);
+}
+
+.notification-card[data-severity="success"] {
+    border-color: rgba(92, 214, 159, 0.24);
+}
+
+.moderation-card .section-header {
+    align-items: flex-start;
+}
+
+.moderation-card .profile-mini-card {
+    margin-bottom: 0.95rem;
+}
