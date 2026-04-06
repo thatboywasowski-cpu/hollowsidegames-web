@@ -38,6 +38,8 @@
     gap: 1.2rem;
 }
 
+
+
 .account-card {
     border: 1px solid var(--line);
     background: linear-gradient(180deg, rgba(20, 20, 20, 0.92), rgba(10, 10, 10, 0.96));
@@ -380,4 +382,22 @@
     .profile-stats {
         grid-template-columns: 1fr;
     }
+}
+
+.account-form .field select,
+.permission-tile select {
+    min-height: 3.25rem;
+    padding: 0.95rem 1rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text);
+    outline: none;
+    font: inherit;
+}
+
+.account-form .field select:focus,
+.permission-tile select:focus {
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.05);
 }
