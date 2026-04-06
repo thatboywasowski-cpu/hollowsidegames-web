@@ -19,7 +19,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var supabase = window.HollowsideAuth.createClient();
     var viewerContext = null;
-    var cachedPosts = [];
 
     function escapeHtml(value) {
         return window.HollowsideAuth.escapeHtml(value);
@@ -43,6 +42,27 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function getSubtitle(post) {
         return (post && post.subtitle ? post.subtitle : "Official Update").toUpperCase();
+    }
+
+    function hasBeenEdited(post) {
+        return !!(post && post.updated_at && post.created_at && new Date(post.updated_at).getTime() > new Date(post.created_at).getTime() + 1000);
+    }
+
+    function renderEditedStamp(post) {
+        if (!hasBeenEdited(post)) {
+            return "";
+        }
+
+        return '<span class="news-edited-label">Last Edited: ' + escapeHtml(formatDateTime(post.updated_at)) + "</span>";
+    }
+
+    function canManageNewsPost(post) {
+        return !!(
+            viewerContext &&
+            post &&
+            viewerContext.id === post.author_id &&
+            viewerContext.can_publish_news
+        );
     }
 
     function buildAuthorLine(post) {
@@ -123,6 +143,45 @@ document.addEventListener("DOMContentLoaded", function () {
         );
     }
 
+    function renderOwnerTools(post) {
+        if (!canManageNewsPost(post)) {
+            return "";
+        }
+
+        return (
+            '<div class="post-owner-tools">' +
+                '<div class="post-owner-actions">' +
+                    '<button class="post-action" type="button" data-news-edit-toggle data-post-id="' + escapeHtml(post.id) + '">Edit Post</button>' +
+                    '<button class="post-action is-danger" type="button" data-news-delete data-post-id="' + escapeHtml(post.id) + '">Delete Post</button>' +
+                "</div>" +
+                '<form class="post-edit-form" data-news-edit-form data-post-id="' + escapeHtml(post.id) + '" hidden>' +
+                    '<div class="post-edit-grid">' +
+                        '<div>' +
+                            '<label for="edit-subtitle-' + escapeHtml(post.id) + '">Subtitle</label>' +
+                            '<input id="edit-subtitle-' + escapeHtml(post.id) + '" name="subtitle" type="text" maxlength="48" value="' + escapeHtml(post.subtitle || "") + '">' +
+                        "</div>" +
+                        '<div>' +
+                            '<label for="edit-title-' + escapeHtml(post.id) + '">Title</label>' +
+                            '<input id="edit-title-' + escapeHtml(post.id) + '" name="title" type="text" maxlength="120" value="' + escapeHtml(post.title || "") + '">' +
+                        "</div>" +
+                    "</div>" +
+                    '<div>' +
+                        '<label for="edit-summary-' + escapeHtml(post.id) + '">Short Description</label>' +
+                        '<input id="edit-summary-' + escapeHtml(post.id) + '" name="summary" type="text" maxlength="240" value="' + escapeHtml(post.summary || "") + '">' +
+                    "</div>" +
+                    '<div>' +
+                        '<label for="edit-body-' + escapeHtml(post.id) + '">Full Description</label>' +
+                        '<textarea id="edit-body-' + escapeHtml(post.id) + '" name="body" maxlength="12000">' + escapeHtml(post.body || "") + '</textarea>' +
+                    "</div>" +
+                    '<div class="account-actions">' +
+                        '<button class="account-button primary" type="submit">Save Changes</button>' +
+                        '<button class="account-button" type="button" data-news-edit-cancel data-post-id="' + escapeHtml(post.id) + '">Cancel</button>' +
+                    "</div>" +
+                "</form>" +
+            "</div>"
+        );
+    }
+
     function renderPreviewCard(post) {
         return (
             '<article class="news-summary-card" data-post-id="' + escapeHtml(post.id) + '">' +
@@ -133,6 +192,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     '<div class="news-card-meta">' +
                         buildAuthorLine(post) +
                         '<span class="news-card-date">' + escapeHtml(formatDate(post.created_at)) + "</span>" +
+                        renderEditedStamp(post) +
                     "</div>" +
                     '<div class="news-card-buttons">' +
                         renderReactionControls(post) +
@@ -163,12 +223,14 @@ document.addEventListener("DOMContentLoaded", function () {
                         '<div class="news-card-meta">' +
                             buildAuthorLine(post) +
                             '<span class="news-card-date">' + escapeHtml(formatDateTime(post.created_at)) + "</span>" +
+                            renderEditedStamp(post) +
                         "</div>" +
                         '<div class="news-card-buttons">' +
                             renderReactionControls(post) +
                             '<a class="button-link primary news-view-link" href="' + getPostHref(post.id) + '">View Full Post</a>' +
                         "</div>" +
                     "</div>" +
+                    renderOwnerTools(post) +
                 "</div>" +
                 renderMediaPreview(mediaResponse.data || []) +
             "</article>";
@@ -186,9 +248,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 throw response.error;
             }
 
-            cachedPosts = response.data || [];
+            var posts = response.data || [];
 
-            if (!cachedPosts.length) {
+            if (!posts.length) {
                 featuredCopy.textContent = "No official posts yet.";
                 archiveCopy.textContent = "Once a studio post is published, it will appear here.";
                 featured.innerHTML = '<article class="content-card"><h3>No official posts yet</h3><p>The first staff-authored post will land here as soon as it is published.</p></article>';
@@ -197,9 +259,9 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             featuredCopy.textContent = "Newest official post from the studio.";
-            archiveCopy.textContent = cachedPosts.length + " published post" + (cachedPosts.length === 1 ? "" : "s") + " ready to browse.";
-            await renderFeaturedPost(cachedPosts[0]);
-            rail.innerHTML = cachedPosts.map(renderPreviewCard).join("");
+            archiveCopy.textContent = posts.length + " published post" + (posts.length === 1 ? "" : "s") + " ready to browse.";
+            await renderFeaturedPost(posts[0]);
+            rail.innerHTML = posts.map(renderPreviewCard).join("");
         } catch (error) {
             featured.innerHTML = "";
             rail.innerHTML = "";
@@ -249,17 +311,119 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    [featured, rail].forEach(function (container) {
-        container.addEventListener("click", function (event) {
-            var reaction = event.target.getAttribute("data-reaction");
-            var postId = event.target.getAttribute("data-post-id");
+    rail.addEventListener("click", function (event) {
+        var reaction = event.target.getAttribute("data-reaction");
+        var postId = event.target.getAttribute("data-post-id");
 
-            if (!reaction || !postId) {
+        if (!reaction || !postId) {
+            return;
+        }
+
+        handleReaction(postId, reaction, event.target);
+    });
+
+    featured.addEventListener("click", async function (event) {
+        var reaction = event.target.getAttribute("data-reaction");
+        var postId = event.target.getAttribute("data-post-id");
+        var editToggle = event.target.hasAttribute("data-news-edit-toggle");
+        var editCancel = event.target.hasAttribute("data-news-edit-cancel");
+        var deletePost = event.target.hasAttribute("data-news-delete");
+
+        if (reaction && postId) {
+            await handleReaction(postId, reaction, event.target);
+            return;
+        }
+
+        if (editToggle || editCancel) {
+            var host = event.target.closest("[data-post-id]");
+            if (!host) {
                 return;
             }
 
-            handleReaction(postId, reaction, event.target);
-        });
+            var form = host.querySelector("[data-news-edit-form]");
+            if (form) {
+                form.hidden = !form.hidden;
+            }
+            return;
+        }
+
+        if (deletePost && postId) {
+            if (!window.confirm("Delete this news post? This also removes its comments, reactions, and attached media records.")) {
+                return;
+            }
+
+            try {
+                var deleteResult = await supabase.rpc("delete_content_post", {
+                    p_post_id: postId
+                });
+
+                if (deleteResult.error) {
+                    throw deleteResult.error;
+                }
+
+                window.HollowsideAuth.setStatus(status, "News post deleted.", "success");
+                await loadFeed();
+            } catch (error) {
+                window.HollowsideAuth.setStatus(
+                    status,
+                    error && error.message ? error.message : "Something went wrong while deleting the news post.",
+                    "error"
+                );
+            }
+        }
+    });
+
+    featured.addEventListener("submit", async function (event) {
+        var form = event.target;
+        if (!form.hasAttribute("data-news-edit-form")) {
+            return;
+        }
+
+        event.preventDefault();
+
+        var postId = form.getAttribute("data-post-id");
+        var subtitleValue = form.querySelector('[name="subtitle"]').value.trim();
+        var titleValue = form.querySelector('[name="title"]').value.trim();
+        var summaryValue = form.querySelector('[name="summary"]').value.trim();
+        var bodyValue = form.querySelector('[name="body"]').value.trim();
+
+        if (!titleValue) {
+            form.querySelector('[name="title"]').focus();
+            return;
+        }
+
+        if (!summaryValue) {
+            form.querySelector('[name="summary"]').focus();
+            return;
+        }
+
+        if (!bodyValue) {
+            form.querySelector('[name="body"]').focus();
+            return;
+        }
+
+        try {
+            var updateResult = await supabase.rpc("update_content_post", {
+                p_post_id: postId,
+                p_title: titleValue,
+                p_body: bodyValue,
+                p_summary: summaryValue,
+                p_subtitle: subtitleValue
+            });
+
+            if (updateResult.error) {
+                throw updateResult.error;
+            }
+
+            window.HollowsideAuth.setStatus(status, "News post updated.", "success");
+            await loadFeed();
+        } catch (error) {
+            window.HollowsideAuth.setStatus(
+                status,
+                error && error.message ? error.message : "Something went wrong while updating the news post.",
+                "error"
+            );
+        }
     });
 
     postForm.addEventListener("submit", async function (event) {
