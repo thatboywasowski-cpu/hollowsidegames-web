@@ -118,22 +118,29 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function renderCommentForm() {
-        if (!viewerContext) {
-            commentFormSlot.innerHTML = '<p class="account-note">Log in to react or comment on this post.</p>';
-            return;
-        }
-
-        if (!viewerContext.can_comment_posts) {
-            commentFormSlot.innerHTML = '<p class="account-note">Comments unlock automatically once an account becomes a Trusted Member or higher.</p>';
-            return;
-        }
-
-        commentFormSlot.innerHTML =
-            '<form class="comment-form" id="single-post-comment-form" action="#" method="post">' +
-                '<textarea maxlength="1500" placeholder="Write a comment..."></textarea>' +
-                '<div class="account-actions"><button class="account-button primary" type="submit">Comment</button></div>' +
-            "</form>";
+    if (!viewerContext) {
+        commentFormSlot.innerHTML = '<p class="account-note">Log in to react or comment on this post.</p>';
+        return;
     }
+
+    if (!viewerContext.can_comment_posts) {
+        if (viewerContext.restriction_label === "Suspended") {
+            commentFormSlot.innerHTML = '<p class="account-note">Suspended accounts can still react, but commenting is paused until the suspension ends.</p>';
+        } else if (viewerContext.restriction_label === "Banned") {
+            commentFormSlot.innerHTML = '<p class="account-note">Banned accounts cannot comment. News reading stays available, but community actions are locked.</p>';
+        } else {
+            commentFormSlot.innerHTML = '<p class="account-note">Comments unlock automatically once an account becomes a Trusted Member or higher.</p>';
+        }
+        return;
+    }
+
+    commentFormSlot.innerHTML =
+        '<form class="comment-form" id="single-post-comment-form" action="#" method="post">' +
+            '<textarea maxlength="1500" placeholder="Write a comment..."></textarea>' +
+            '<div class="account-actions"><button class="account-button primary" type="submit">Comment</button></div>' +
+        "</form>";
+}
+
 
     function syncCounts(post) {
         likeCount.textContent = window.HollowsideAuth.formatCountLabel(post.like_count, "Like", "Likes");
@@ -142,10 +149,56 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function renderActions() {
-        actions.innerHTML =
-            '<button class="post-action' + (postCard.viewer_reaction === "like" ? " is-active" : "") + '" type="button" data-reaction="like">' + window.HollowsideAuth.formatCountLabel(postCard.like_count, "Like", "Likes") + "</button>" +
-            '<button class="post-action' + (postCard.viewer_reaction === "dislike" ? " is-active" : "") + '" type="button" data-reaction="dislike">' + window.HollowsideAuth.formatCountLabel(postCard.dislike_count, "Dislike", "Dislikes") + "</button>";
+    actions.innerHTML =
+        '<button class="post-action' + (postCard.viewer_reaction === "like" ? " is-active" : "") + '" type="button" data-reaction="like">' + window.HollowsideAuth.formatCountLabel(postCard.like_count, "Like", "Likes") + "</button>" +
+        '<button class="post-action' + (postCard.viewer_reaction === "dislike" ? " is-active" : "") + '" type="button" data-reaction="dislike">' + window.HollowsideAuth.formatCountLabel(postCard.dislike_count, "Dislike", "Dislikes") + "</button>" +
+        (viewerContext && viewerContext.account_id !== postCard.author_account_id
+            ? '<button class="post-action" type="button" data-report-post>Report Post</button>'
+            : "");
+        var reportPost = event.target.hasAttribute("data-report-post");
+if (!reaction || !postCard) {
+    if (!reportPost || !postCard) {
+        return;
     }
+
+    if (!viewerContext) {
+        window.location.href = "/login?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
+        return;
+    }
+
+    var reason = window.prompt("Report reason:", "Spam");
+    if (reason === null) {
+        return;
+    }
+
+    var details = window.prompt("Extra details (optional):", "") || "";
+
+    try {
+        var reportResponse = await supabase.rpc("create_report", {
+            p_target_type: "post",
+            p_target_account_id: postCard.author_account_id,
+            p_target_post_id: postId,
+            p_reason: reason.trim(),
+            p_details: details.trim()
+        });
+
+        if (reportResponse.error) {
+            throw reportResponse.error;
+        }
+
+        window.HollowsideAuth.setStatus(status, "Report submitted.", "success");
+    } catch (error) {
+        window.HollowsideAuth.setStatus(
+            status,
+            error && error.message ? error.message : "Something went wrong while submitting the report.",
+            "error"
+        );
+    }
+    return;
+}
+
+}
+
 
     function renderOwnerTools(post) {
         if (!canManageNewsPost(post)) {
