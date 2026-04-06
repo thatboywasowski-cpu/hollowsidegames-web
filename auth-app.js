@@ -19,7 +19,6 @@
 
     function pickStorage(rememberMe) {
         var config = readConfig();
-
         if (rememberMe === true) {
             return window.localStorage;
         }
@@ -50,7 +49,7 @@
         }
 
         if (!isConfigured()) {
-            throw new Error("Supabase config is missing. Add your project URL and anon key in /supabase-config.js.");
+            throw new Error("Supabase config is missing. Add your project URL and publishable key in /supabase-config.js.");
         }
 
         return window.supabase.createClient(config.url, config.anonKey, {
@@ -103,6 +102,149 @@
         setStatus(statusTarget, "Google and Apple sign-in will be connected after those providers are set up in Supabase.", "info");
     }
 
+    function sanitizeUsername(value) {
+        return String(value || "")
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9_.]/g, "")
+            .replace(/^\.+|\.+$/g, "")
+            .slice(0, 24);
+    }
+
+    function fallbackUsername(user) {
+        var metadata = (user && user.user_metadata) || {};
+        var base = sanitizeUsername(
+            metadata.username ||
+            metadata.display_name ||
+            metadata.name ||
+            (user && user.email ? user.email.split("@")[0] : "") ||
+            "member"
+        );
+
+        if (base.length < 3) {
+            base = "member" + String(Date.now()).slice(-4);
+        }
+
+        return base;
+    }
+
+    function fallbackDisplayName(user) {
+        var metadata = (user && user.user_metadata) || {};
+        return (
+            metadata.display_name ||
+            metadata.full_name ||
+            metadata.name ||
+            metadata.username ||
+            (user && user.email ? user.email.split("@")[0] : "") ||
+            "Hollowside Member"
+        );
+    }
+
+    function createAccountId() {
+        var alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        var result = "hsg_";
+
+        if (window.crypto && window.crypto.getRandomValues) {
+            var buffer = new Uint8Array(10);
+            window.crypto.getRandomValues(buffer);
+            for (var index = 0; index < buffer.length; index += 1) {
+                result += alphabet[buffer[index] % alphabet.length];
+            }
+            return result;
+        }
+
+        for (var fallbackIndex = 0; fallbackIndex < 10; fallbackIndex += 1) {
+            result += alphabet[Math.floor(Math.random() * alphabet.length)];
+        }
+
+        return result;
+    }
+
+    async function loadProfile(client, userId) {
+        if (!client || !userId) {
+            return { data: null, error: new Error("Missing client or user id.") };
+        }
+
+        return client
+            .from("profiles")
+            .select("*")
+            .eq("id", userId)
+            .maybeSingle();
+    }
+
+    async function ensureProfile(client, user) {
+        if (!client || !user) {
+            return { data: null, error: new Error("Missing client or user.") };
+        }
+
+        var profileResult = await loadProfile(client, user.id);
+
+        if (profileResult.error && profileResult.error.code !== "PGRST116") {
+            return profileResult;
+        }
+
+        if (profileResult.data) {
+            return profileResult;
+        }
+
+        var usernameBase = fallbackUsername(user);
+        var displayName = fallbackDisplayName(user);
+        var lastError = null;
+
+        for (var attempt = 0; attempt < 5; attempt += 1) {
+            var username = attempt === 0 ? usernameBase : (usernameBase + "_" + attempt).slice(0, 24);
+            if (username.length < 3) {
+                username = ("member_" + attempt + String(Date.now()).slice(-4)).slice(0, 24);
+            }
+
+            var insertResult = await client
+                .from("profiles")
+                .insert({
+                    id: user.id,
+                    username: username,
+                    display_name: displayName,
+                    bio: "",
+                    account_id: createAccountId(),
+                    role_label: "Member",
+                    website_url: "",
+                    location: "",
+                    avatar_url: "",
+                    avatar_path: ""
+                })
+                .select("*")
+                .single();
+
+            if (!insertResult.error) {
+                return insertResult;
+            }
+
+            lastError = insertResult.error;
+            if (lastError.code !== "23505") {
+                return insertResult;
+            }
+        }
+
+        return { data: null, error: lastError || new Error("Unable to create profile.") };
+    }
+
+    function getInitials(profile, user) {
+        var source =
+            (profile && (profile.display_name || profile.username)) ||
+            ((user && user.email) ? user.email.split("@")[0] : "") ||
+            "H";
+
+        var pieces = String(source).trim().split(/\s+/).filter(Boolean);
+        if (pieces.length === 0) {
+            return "H";
+        }
+
+        if (pieces.length === 1) {
+            return pieces[0].slice(0, 2).toUpperCase();
+        }
+
+        return (pieces[0][0] + pieces[1][0]).toUpperCase();
+    }
+
     window.HollowsideAuth = {
         readConfig: readConfig,
         isConfigured: isConfigured,
@@ -110,6 +252,12 @@
         clearStoredSession: clearStoredSession,
         setStatus: setStatus,
         setBusy: setBusy,
-        socialComingSoon: socialComingSoon
+        socialComingSoon: socialComingSoon,
+        sanitizeUsername: sanitizeUsername,
+        fallbackUsername: fallbackUsername,
+        fallbackDisplayName: fallbackDisplayName,
+        loadProfile: loadProfile,
+        ensureProfile: ensureProfile,
+        getInitials: getInitials
     };
 })();
