@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var passwordInput = document.getElementById("login-password");
     var rememberInput = document.getElementById("remember-me");
     var socialButtons = document.querySelectorAll("[data-social-placeholder]");
+    var redirectUrl = new URLSearchParams(window.location.search).get("redirect") || "/";
 
     socialButtons.forEach(function (button) {
         button.addEventListener("click", function () {
@@ -15,7 +16,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!window.HollowsideAuth.isConfigured()) {
         window.HollowsideAuth.setStatus(
             status,
-            "Supabase is not connected yet. Add your project URL and anon key in /supabase-config.js to enable login.",
+            "Supabase is not connected yet. Add your project URL and publishable key in /supabase-config.js to enable login.",
             "error"
         );
         return;
@@ -26,7 +27,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (result.data && result.data.session) {
             window.HollowsideAuth.setStatus(status, "You're already logged in. Redirecting...", "info");
             window.setTimeout(function () {
-                window.location.href = "/";
+                window.location.href = redirectUrl;
             }, 900);
         }
     });
@@ -65,9 +66,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 throw response.error;
             }
 
+            if (response.data && response.data.user) {
+                await window.HollowsideAuth.ensureProfile(supabase, response.data.user);
+            }
+
             window.HollowsideAuth.setStatus(status, "Login successful. Redirecting...", "success");
             window.setTimeout(function () {
-                window.location.href = "/";
+                window.location.href = redirectUrl;
             }, 900);
         } catch (error) {
             window.HollowsideAuth.setStatus(
