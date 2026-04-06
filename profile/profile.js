@@ -215,6 +215,40 @@ document.addEventListener("DOMContentLoaded", function () {
         );
     }
 
+    function canManageProfilePost(post) {
+    return !!(
+        viewerContext &&
+        post &&
+        viewerContext.id === post.author_id &&
+        viewerContext.can_publish_personal_posts
+    );
+}
+
+function renderOwnerTools(post) {
+    if (!canManageProfilePost(post)) {
+        return "";
+    }
+
+    return (
+        '<div class="post-owner-tools">' +
+            '<div class="post-owner-actions">' +
+                '<button class="post-action" type="button" data-profile-edit-toggle data-post-id="' + escapeHtml(post.id) + '">Edit Post</button>' +
+                '<button class="post-action is-danger" type="button" data-profile-delete data-post-id="' + escapeHtml(post.id) + '">Delete Post</button>' +
+            "</div>" +
+            '<form class="post-edit-form" data-profile-edit-form data-post-id="' + escapeHtml(post.id) + '" hidden>' +
+                '<div>' +
+                    '<label for="profile-edit-body-' + escapeHtml(post.id) + '">Edit Post</label>' +
+                    '<textarea id="profile-edit-body-' + escapeHtml(post.id) + '" name="body" maxlength="5000">' + escapeHtml(post.body || "") + '</textarea>' +
+                "</div>" +
+                '<div class="account-actions">' +
+                    '<button class="account-button primary" type="submit">Save Changes</button>' +
+                    '<button class="account-button" type="button" data-profile-edit-cancel data-post-id="' + escapeHtml(post.id) + '">Cancel</button>' +
+                "</div>" +
+            "</form>" +
+        "</div>"
+    );
+}
+
     async function uploadPostMediaFiles(postId, files) {
         if (!viewerContext || !viewerContext.id || !files.length) {
             return;
@@ -312,6 +346,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         '<p class="post-body">' + escapeHtml(post.body) + '</p>' +
                         renderMedia(mediaResponse.data || []) +
                         '<div class="post-actions">' +
+                         renderOwnerTools(post) +
                             '<button class="post-action' + (post.viewer_reaction === "like" ? " is-active" : "") + '" type="button" data-reaction="like" data-post-id="' + escapeHtml(post.id) + '">Like - ' + window.HollowsideAuth.formatCountLabel(post.like_count, "Like", "Likes") + '</button>' +
                             '<button class="post-action' + (post.viewer_reaction === "dislike" ? " is-active" : "") + '" type="button" data-reaction="dislike" data-post-id="' + escapeHtml(post.id) + '">Dislike - ' + window.HollowsideAuth.formatCountLabel(post.dislike_count, "Dislike", "Dislikes") + '</button>' +
                             '<span class="account-chip">' + window.HollowsideAuth.formatCountLabel(post.comment_count, "Comment", "Comments") + '</span>' +
@@ -342,82 +377,163 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     postFeed.addEventListener("click", async function (event) {
-        var reaction = event.target.getAttribute("data-reaction");
-        var postId = event.target.getAttribute("data-post-id");
-        if (!reaction || !postId) {
+    var reaction = event.target.getAttribute("data-reaction");
+    var postId = event.target.getAttribute("data-post-id");
+    var editToggle = event.target.hasAttribute("data-profile-edit-toggle");
+    var editCancel = event.target.hasAttribute("data-profile-edit-cancel");
+    var deletePost = event.target.hasAttribute("data-profile-delete");
+
+    if (editToggle || editCancel) {
+        var host = event.target.closest("[data-post-id]");
+        if (!host) {
+            return;
+        }
+
+        var editForm = host.querySelector("[data-profile-edit-form]");
+        if (editForm) {
+            editForm.hidden = !editForm.hidden;
+        }
+        return;
+    }
+
+    if (deletePost && postId) {
+        if (!window.confirm("Delete this profile post? This also removes its comments, reactions, and attached media records.")) {
             return;
         }
 
         try {
-            if (!viewerContext) {
-                window.location.href = "/login?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
-                return;
-            }
-
-            if (event.target.classList.contains("is-active")) {
-                var clearResult = await supabase.rpc("clear_post_reaction", { p_post_id: postId });
-                if (clearResult.error) {
-                    throw clearResult.error;
-                }
-            } else {
-                var reactionResult = await supabase.rpc("set_post_reaction", {
-                    p_post_id: postId,
-                    p_reaction_type: reaction
-                });
-
-                if (reactionResult.error) {
-                    throw reactionResult.error;
-                }
-            }
-
-            loadProfilePosts();
-        } catch (error) {
-            window.HollowsideAuth.setStatus(
-                status,
-                error && error.message ? error.message : "Something went wrong while reacting to the post.",
-                "error"
-            );
-        }
-    });
-
-    postFeed.addEventListener("submit", async function (event) {
-        var form = event.target;
-        if (!form.hasAttribute("data-comment-form")) {
-            return;
-        }
-
-        event.preventDefault();
-
-        var postId = form.getAttribute("data-post-id");
-        var textarea = form.querySelector("textarea");
-        var body = textarea.value.trim();
-
-        if (!body) {
-            textarea.focus();
-            return;
-        }
-
-        try {
-            var commentResponse = await supabase.rpc("create_post_comment", {
-                p_post_id: postId,
-                p_body: body,
-                p_parent_id: null
+            var deleteResult = await supabase.rpc("delete_content_post", {
+                p_post_id: postId
             });
 
-            if (commentResponse.error) {
-                throw commentResponse.error;
+            if (deleteResult.error) {
+                throw deleteResult.error;
             }
 
-            textarea.value = "";
+            window.HollowsideAuth.setStatus(status, "Profile post deleted.", "success");
             loadProfilePosts();
         } catch (error) {
             window.HollowsideAuth.setStatus(
                 status,
-                error && error.message ? error.message : "Something went wrong while posting your comment.",
+                error && error.message ? error.message : "Something went wrong while deleting the post.",
                 "error"
             );
         }
-    });
+        return;
+    }
+
+    if (!reaction || !postId) {
+        return;
+    }
+
+    try {
+        if (!viewerContext) {
+            window.location.href = "/login?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
+            return;
+        }
+
+        if (event.target.classList.contains("is-active")) {
+            var clearResult = await supabase.rpc("clear_post_reaction", { p_post_id: postId });
+            if (clearResult.error) {
+                throw clearResult.error;
+            }
+        } else {
+            var reactionResult = await supabase.rpc("set_post_reaction", {
+                p_post_id: postId,
+                p_reaction_type: reaction
+            });
+
+            if (reactionResult.error) {
+                throw reactionResult.error;
+            }
+        }
+
+        loadProfilePosts();
+    } catch (error) {
+        window.HollowsideAuth.setStatus(
+            status,
+            error && error.message ? error.message : "Something went wrong while reacting to the post.",
+            "error"
+        );
+    }
+});
+
+
+    postFeed.addEventListener("submit", async function (event) {
+    var form = event.target;
+    if (form.hasAttribute("data-profile-edit-form")) {
+        event.preventDefault();
+
+        var editPostId = form.getAttribute("data-post-id");
+        var editBody = form.querySelector('[name="body"]').value.trim();
+
+        if (!editBody) {
+            form.querySelector('[name="body"]').focus();
+            return;
+        }
+
+        try {
+            var updateResult = await supabase.rpc("update_content_post", {
+                p_post_id: editPostId,
+                p_title: "",
+                p_body: editBody,
+                p_summary: "",
+                p_subtitle: ""
+            });
+
+            if (updateResult.error) {
+                throw updateResult.error;
+            }
+
+            window.HollowsideAuth.setStatus(status, "Profile post updated.", "success");
+            loadProfilePosts();
+        } catch (error) {
+            window.HollowsideAuth.setStatus(
+                status,
+                error && error.message ? error.message : "Something went wrong while updating the post.",
+                "error"
+            );
+        }
+        return;
+    }
+
+    if (!form.hasAttribute("data-comment-form")) {
+        return;
+    }
+
+    event.preventDefault();
+
+    var postId = form.getAttribute("data-post-id");
+    var textarea = form.querySelector("textarea");
+    var body = textarea.value.trim();
+
+    if (!body) {
+        textarea.focus();
+        return;
+    }
+
+    try {
+        var commentResponse = await supabase.rpc("create_post_comment", {
+            p_post_id: postId,
+            p_body: body,
+            p_parent_id: null
+        });
+
+        if (commentResponse.error) {
+            throw commentResponse.error;
+        }
+
+        textarea.value = "";
+        loadProfilePosts();
+    } catch (error) {
+        window.HollowsideAuth.setStatus(
+            status,
+            error && error.message ? error.message : "Something went wrong while posting your comment.",
+            "error"
+        );
+    }
+});
+
 
     postForm.addEventListener("submit", async function (event) {
         event.preventDefault();
