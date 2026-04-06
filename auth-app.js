@@ -49,7 +49,7 @@
         }
 
         if (!isConfigured()) {
-            throw new Error("Supabase config is missing. Add your project URL and publishable key in /supabase-config.js.");
+            throw new Error("Supabase config is missing. Add your project URL and anon key in /supabase-config.js.");
         }
 
         return window.supabase.createClient(config.url, config.anonKey, {
@@ -100,6 +100,15 @@
 
     function socialComingSoon(statusTarget) {
         setStatus(statusTarget, "Google and Apple sign-in will be connected after those providers are set up in Supabase.", "info");
+    }
+
+    function escapeHtml(value) {
+        return String(value || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
     }
 
     function sanitizeUsername(value) {
@@ -201,18 +210,18 @@
                 .from("profiles")
                 .insert({
                     id: user.id,
-                    username: username,
-                    display_name: displayName,
-                    bio: "",
-                    account_id: createAccountId(),
-                    role_label: "Member",
-                    website_url: "",
-                    location: "",
-                    avatar_url: "",
-                    avatar_path: ""
-                })
-                .select("*")
-                .single();
+                username: username,
+                display_name: displayName,
+                bio: "",
+                account_id: createAccountId(),
+                role_label: "Member",
+                website_url: "",
+                location: "",
+                avatar_url: "",
+                avatar_path: ""
+            })
+            .select("*")
+            .single();
 
             if (!insertResult.error) {
                 return insertResult;
@@ -245,6 +254,54 @@
         return (pieces[0][0] + pieces[1][0]).toUpperCase();
     }
 
+    function formatCompactCount(value) {
+        var count = Number(value || 0);
+
+        if (count >= 1000000) {
+            return (Math.floor((count / 100000)) / 10).toFixed(1).replace(/\.0$/, "") + "M+";
+        }
+
+        if (count >= 1000) {
+            return (Math.floor((count / 100)) / 10).toFixed(1).replace(/\.0$/, "") + "K+";
+        }
+
+        return String(count);
+    }
+
+    function formatCountLabel(value, singular, plural) {
+        var label = Number(value || 0) === 1 ? singular : plural;
+        return formatCompactCount(value) + " " + label;
+    }
+
+    function getVerificationBadge(record, ariaLabel) {
+        if (!record || !record.is_verified) {
+            return "";
+        }
+
+        var mode = escapeHtml(record.verification_mode || "manual");
+        var label = escapeHtml(ariaLabel || "Verified account");
+
+        return (
+            '<span class="verification-badge" data-mode="' + mode + '" title="' + label + '" aria-label="' + label + '">' +
+                '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+                    '<path d="M9.55 16.2 5.7 12.35l1.4-1.4 2.45 2.45 7.35-7.35 1.4 1.4z"></path>' +
+                "</svg>" +
+            "</span>"
+        );
+    }
+
+    async function touchActivity(client) {
+        if (!client) {
+            return;
+        }
+
+        try {
+            await client.rpc("touch_my_activity");
+        } catch (error) {
+            return;
+        }
+    }
+
     window.HollowsideAuth = {
         readConfig: readConfig,
         isConfigured: isConfigured,
@@ -258,6 +315,11 @@
         fallbackDisplayName: fallbackDisplayName,
         loadProfile: loadProfile,
         ensureProfile: ensureProfile,
-        getInitials: getInitials
+        getInitials: getInitials,
+        escapeHtml: escapeHtml,
+        formatCompactCount: formatCompactCount,
+        formatCountLabel: formatCountLabel,
+        getVerificationBadge: getVerificationBadge,
+        touchActivity: touchActivity
     };
 })();
