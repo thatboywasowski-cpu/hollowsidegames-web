@@ -94,6 +94,28 @@ document.addEventListener("DOMContentLoaded", function () {
         menu.hidden = false;
     }
 
+    function enforceRestrictedAccess(accountContext) {
+        if (!accountContext || !accountContext.is_banned) {
+            return;
+        }
+
+        var allowedPrefixes = [
+            "/news",
+            "/account",
+            "/login",
+            "/signup",
+            "/reset-password"
+        ];
+        var currentPath = window.location.pathname;
+        var allowed = allowedPrefixes.some(function (prefix) {
+            return currentPath === prefix || currentPath.indexOf(prefix + "/") === 0;
+        });
+
+        if (!allowed) {
+            window.location.href = "/news?access=restricted";
+        }
+    }
+
     async function handleSignOut() {
         try {
             await supabase.auth.signOut();
@@ -127,27 +149,55 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    async function renderUserState(user, profile, adminContext) {
+    async function renderUserState(user, profile, accountContext) {
         guestLinks.forEach(function (link) {
             link.classList.add("is-hidden");
         });
 
         removeAccountShell();
+        enforceRestrictedAccess(accountContext);
 
-        var canOpenRoleTools = adminContext && (
-            adminContext.can_manage_roles ||
-            adminContext.can_manage_role_permissions ||
-            adminContext.can_manage_account_permissions
+        var canOpenRoleTools = accountContext && (
+            accountContext.can_manage_roles ||
+            accountContext.can_manage_role_permissions ||
+            accountContext.can_manage_account_permissions
         );
+        var canOpenModeration = accountContext && accountContext.can_access_moderation;
         var publicProfileHref = profile && profile.account_id
             ? "/profile?id=" + encodeURIComponent(profile.account_id)
             : "/account";
+        var notificationKicker = accountContext && Number(accountContext.unread_notification_count || 0) > 0
+            ? String(accountContext.unread_notification_count) + " new"
+            : "inbox";
+        var restrictionCopy = accountContext && accountContext.restriction_label
+            ? '<span class="nav-menu-role">' + window.HollowsideAuth.escapeHtml(accountContext.restriction_label) + '</span>'
+            : "";
+        var banned = accountContext && accountContext.is_banned;
 
         var shell = document.createElement("div");
         var displayName = window.HollowsideAuth.escapeHtml(getDisplayName(profile, user));
         var handle = window.HollowsideAuth.escapeHtml(getHandle(profile, user));
         var roleLabel = window.HollowsideAuth.escapeHtml((profile && profile.role_label) || "Member");
-        var verifiedBadge = window.HollowsideAuth.getVerificationBadge(adminContext || profile, "Verified Hollowside account");
+        var verifiedBadge = window.HollowsideAuth.getVerificationBadge(accountContext || profile, "Verified Hollowside account");
+        var menuLinks = [
+            getMenuLink("Account settings", "/account", "profile"),
+            getMenuLink("Notifications", "/account#notifications", notificationKicker),
+            getMenuLink("Safety", "/account#safety", "blocks")
+        ];
+
+        if (!banned) {
+            menuLinks.unshift(getMenuLink("View full profile", publicProfileHref, "public"));
+            menuLinks.splice(1, 0, getMenuLink("Browse members", "/directory", "search"));
+        }
+
+        if (canOpenModeration) {
+            menuLinks.push(getMenuLink("Moderation", "/account#moderation", "staff"));
+        }
+
+        if (canOpenRoleTools) {
+            menuLinks.push(getMenuLink("Role tools", "/admin/roles", "staff"));
+        }
+
         shell.className = "nav-account-shell";
         shell.innerHTML =
             '<button class="nav-account-button" type="button" data-account-menu-button aria-expanded="false" aria-haspopup="true">' +
@@ -162,14 +212,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     "<strong>" + displayName + "</strong>" +
                     '<span class="nav-account-handle">' + handle + verifiedBadge + "</span>" +
                     '<span class="nav-menu-role">' + roleLabel + "</span>" +
+                    restrictionCopy +
                 "</div>" +
                 '<div class="nav-menu-actions">' +
-                    getMenuLink("View full profile", publicProfileHref, "public") +
-                    getMenuLink("Browse members", "/directory", "search") +
-                    getMenuLink("Account settings", "/account", "profile") +
-                    getMenuLink("Notifications", "/account#future", "soon") +
-                    getMenuLink("Following", "/account#future", "soon") +
-                    (canOpenRoleTools ? getMenuLink("Role tools", "/admin/roles", "staff") : "") +
+                    menuLinks.join("") +
                     '<button class="nav-menu-button" type="button" data-nav-signout>' +
                         "<span>Sign out</span>" +
                         '<span class="nav-menu-kicker">leave</span>' +
