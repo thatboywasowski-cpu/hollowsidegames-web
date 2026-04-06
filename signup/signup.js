@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
     var form = document.getElementById("signup-form");
     var status = document.getElementById("signup-status");
+    var displayNameInput = document.getElementById("signup-display-name");
     var usernameInput = document.getElementById("signup-username");
     var emailInput = document.getElementById("signup-email");
     var passwordInput = document.getElementById("signup-password");
@@ -17,7 +18,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!window.HollowsideAuth.isConfigured()) {
         window.HollowsideAuth.setStatus(
             status,
-            "Supabase is not connected yet. Add your project URL and anon key in /supabase-config.js to enable signup.",
+            "Supabase is not connected yet. Add your project URL and publishable key in /supabase-config.js to enable signup.",
             "error"
         );
         return;
@@ -27,14 +28,15 @@ document.addEventListener("DOMContentLoaded", function () {
         event.preventDefault();
         window.HollowsideAuth.setStatus(status, "", "info");
 
-        var username = usernameInput.value.trim();
+        var displayName = displayNameInput.value.trim();
+        var username = window.HollowsideAuth.sanitizeUsername(usernameInput.value);
         var email = emailInput.value.trim();
         var password = passwordInput.value;
         var confirmPassword = confirmInput.value;
         var consent = consentInput.checked;
 
-        if (!username) {
-            window.HollowsideAuth.setStatus(status, "Choose a username to continue.", "error");
+        if (username.length < 3) {
+            window.HollowsideAuth.setStatus(status, "Choose a username with at least 3 valid characters.", "error");
             usernameInput.focus();
             return;
         }
@@ -65,14 +67,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
         try {
             window.HollowsideAuth.setBusy(form, true);
-
             var supabase = window.HollowsideAuth.createClient({ rememberMe: true });
             var response = await supabase.auth.signUp({
                 email: email,
                 password: password,
                 options: {
                     data: {
-                        username: username
+                        username: username,
+                        display_name: displayName || username
                     },
                     emailRedirectTo: window.location.origin + "/login"
                 }
