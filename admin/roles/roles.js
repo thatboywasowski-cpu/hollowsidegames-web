@@ -1,8 +1,12 @@
 document.addEventListener("DOMContentLoaded", function () {
     var status = document.getElementById("admin-status");
     var roleAssignmentForm = document.getElementById("role-assignment-form");
+    var verificationForm = document.getElementById("verification-form");
     var targetAccountIdInput = document.getElementById("role-target-account-id");
     var targetRoleSelect = document.getElementById("role-target-role");
+    var verificationAccountIdInput = document.getElementById("verification-account-id");
+    var verificationEnabledInput = document.getElementById("verification-enabled");
+    var verificationNoteInput = document.getElementById("verification-note");
     var rolePermissionRole = document.getElementById("role-permission-role");
     var rolePermissionGrid = document.getElementById("role-permission-grid");
     var overrideAccountIdInput = document.getElementById("override-account-id");
@@ -143,6 +147,42 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
+    verificationForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        if (!adminContext || !adminContext.can_verify_accounts) {
+            window.HollowsideAuth.setStatus(status, "You do not have access to manual verification tools.", "error");
+            return;
+        }
+
+        var targetAccountId = verificationAccountIdInput.value.trim();
+        if (!targetAccountId) {
+            window.HollowsideAuth.setStatus(status, "Enter a target account ID first.", "error");
+            return;
+        }
+
+        try {
+            window.HollowsideAuth.setStatus(status, "Updating verification...", "info");
+            var response = await supabase.rpc("set_account_verification", {
+                p_account_id: targetAccountId,
+                p_manual_verified: verificationEnabledInput.value === "true",
+                p_note: verificationNoteInput.value.trim()
+            });
+
+            if (response.error) {
+                throw response.error;
+            }
+
+            window.HollowsideAuth.setStatus(status, "Verification updated successfully.", "success");
+        } catch (error) {
+            window.HollowsideAuth.setStatus(
+                status,
+                error && error.message ? error.message : "Something went wrong while updating verification.",
+                "error"
+            );
+        }
+    });
+
     rolePermissionRole.addEventListener("change", function () {
         renderRolePermissionGrid();
     });
@@ -237,13 +277,21 @@ document.addEventListener("DOMContentLoaded", function () {
         try {
             window.HollowsideAuth.setStatus(status, "Loading role tools...", "info");
 
-            var contextResponse = await supabase.rpc("get_my_role_context");
-            if (contextResponse.error) {
-                throw contextResponse.error;
+            var accountContextResponse = await supabase.rpc("get_my_account_context");
+            if (accountContextResponse.error) {
+                throw accountContextResponse.error;
             }
 
-            adminContext = contextResponse.data && contextResponse.data[0];
-            if (!adminContext || (!adminContext.can_manage_roles && !adminContext.can_manage_role_permissions && !adminContext.can_manage_account_permissions)) {
+            var roleContextResponse = await supabase.rpc("get_my_role_context");
+            if (roleContextResponse.error) {
+                throw roleContextResponse.error;
+            }
+
+            var accountContext = accountContextResponse.data && accountContextResponse.data[0];
+            var roleContext = roleContextResponse.data && roleContextResponse.data[0];
+
+            adminContext = Object.assign({}, roleContext || {}, accountContext || {});
+            if (!adminContext || (!adminContext.can_manage_roles && !adminContext.can_manage_role_permissions && !adminContext.can_manage_account_permissions && !adminContext.can_verify_accounts)) {
                 window.HollowsideAuth.setStatus(status, "You do not have access to the role tools.", "error");
                 return;
             }
@@ -258,7 +306,11 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             manageableRoles = (rolesResponse.data || []).filter(function (role) {
-                return role.rank < adminContext.role_rank;
+                return role.rank < (
+                    adminContext.can_manage_roles
+                        ? (adminContext.role_rank || 0)
+                        : 0
+                );
             });
 
             var permissionsResponse = await supabase
