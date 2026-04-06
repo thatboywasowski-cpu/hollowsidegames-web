@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Post | Hollowside Games</title>
+    <meta name="description" content="Read an official Hollowside news post.">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/auth.css">
+    <link rel="stylesheet" href="/account.css">
+</head>
+<body>
+    <div class="page-shell">
+        <div class="dust-layer" aria-hidden="true"></div>
+
+        <header class="site-header">
+            <div class="site-header-bar">
+                <a class="brand" href="/">
+                    <span class="brand-mark">H</span>
+                    <span class="brand-text">
+                        <strong>Hollowside Games</strong>
+                    </span>
+                </a>
+
+                <nav class="nav-links" aria-label="Primary">
+                    <a class="nav-link" href="/">Home</a>
+                    <a class="nav-link" href="/help">Help</a>
+                    <a class="nav-link is-current" href="/news">News</a>
+                    <a class="nav-link" href="/about">About</a>
+                    <a class="nav-link" href="/directory">Members</a>
+                    <a class="nav-link" href="/login">Login</a>
+                    <a class="nav-link" href="/signup">Sign Up</a>
+                </nav>
+            </div>
+        </header>
+
+        <main class="site-main">
+            <p class="page-status" id="post-status" hidden></p>
+
+            <section class="section-block">
+                <div class="section-header">
+                    <h2>Full Post</h2>
+                    <p><a class="auth-link" href="/news">Back to the news archive</a></p>
+                </div>
+
+                <section class="news-article-layout">
+                    <article class="news-article-main">
+                        <p class="meta" id="post-subtitle">Loading...</p>
+                        <h1 class="page-heading news-post-title" id="post-title">Loading...</h1>
+                        <p class="lead" id="post-summary">Loading post summary...</p>
+
+                        <div class="news-post-meta-row">
+                            <div id="post-author-meta"></div>
+                            <span class="account-chip" id="post-date">Loading...</span>
+                        </div>
+
+                        <div id="post-media"></div>
+
+                        <div class="post-actions" id="post-actions"></div>
+
+                        <article class="news-body-card">
+                            <div class="post-body news-full-body" id="post-body">Loading post body...</div>
+                        </article>
+                    </article>
+
+                    <aside class="news-article-side">
+                        <article class="account-card">
+                            <h3>About This Post</h3>
+                            <div class="account-chip-row">
+                                <span class="account-chip" id="post-like-count">0 Likes</span>
+                                <span class="account-chip" id="post-dislike-count">0 Dislikes</span>
+                                <span class="account-chip" id="post-comment-count">0 Comments</span>
+                            </div>
+                            <p class="account-note">Reactions are available from both the short card view and this full post page.</p>
+                            <div class="account-actions">
+                                <a class="account-button primary" id="post-author-link" href="/news">View Author Profile</a>
+                            </div>
+                        </article>
+                    </aside>
+                </section>
+            </section>
+
+            <section class="section-block">
+                <div class="section-header">
+                    <h2>Comments</h2>
+                    <p id="post-comments-copy">Loading comments...</p>
+                </div>
+
+                <div class="account-card">
+                    <div id="post-comment-form-slot"></div>
+                    <div id="post-comments"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="/supabase-config.js"></script>
+    <script defer src="/auth-app.js"></script>
+    <script defer src="/site-shell.js"></script>
+    <script defer src="/news/post/post.js"></script>
+</body>
+</html>
