@@ -24,16 +24,22 @@ html,
 body {
     margin: 0;
     min-height: 100%;
+    background: #050505;
+    color-scheme: dark;
 }
 
 body {
+    min-height: 100dvh;
     background:
-        radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 35%),
-        radial-gradient(circle at bottom right, rgba(255, 255, 255, 0.05), transparent 24%),
+        radial-gradient(circle at top, rgba(255, 255, 255, 0.045), transparent 34%),
+        radial-gradient(circle at bottom right, rgba(255, 255, 255, 0.035), transparent 24%),
         linear-gradient(160deg, #0c0c0c 0%, #040404 45%, #0f0f0f 100%);
+    background-color: #050505;
     color: var(--text);
     font-family: var(--font);
     overflow-x: hidden;
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 a {
@@ -48,8 +54,13 @@ input {
 
 .page-shell {
     min-height: 100vh;
+    min-height: 100dvh;
     position: relative;
-    overflow: hidden;
+    overflow-x: hidden;
+    background:
+        radial-gradient(circle at top, rgba(255, 255, 255, 0.04), transparent 34%),
+        radial-gradient(circle at bottom right, rgba(255, 255, 255, 0.03), transparent 24%),
+        linear-gradient(160deg, #0c0c0c 0%, #040404 45%, #0f0f0f 100%);
 }
 
 .page-shell::before,
@@ -1477,8 +1488,31 @@ select option:disabled {
 }
 
 @media (max-width: 760px) {
+    body {
+        background:
+            radial-gradient(circle at 50% -18%, rgba(255, 255, 255, 0.025), transparent 28%),
+            linear-gradient(180deg, #070707 0%, #030303 48%, #090909 100%);
+        background-color: #050505;
+    }
+
+    .page-shell {
+        background:
+            radial-gradient(circle at 50% -18%, rgba(255, 255, 255, 0.024), transparent 28%),
+            linear-gradient(180deg, #070707 0%, #030303 48%, #090909 100%);
+    }
+
+    .page-shell::before,
+    .page-shell::after {
+        opacity: 0.22;
+    }
+
+    .page-shell .dust-layer {
+        opacity: 0.38;
+    }
+
     .site-header {
         padding-top: 0.75rem;
+        padding-top: calc(0.75rem + env(safe-area-inset-top));
     }
 
     .site-header-bar {
