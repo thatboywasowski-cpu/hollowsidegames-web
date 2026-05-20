@@ -82,7 +82,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         return '<div class="post-media-item"><video controls preload="metadata" src="' + escapeHtml(item.media_url) + '"></video></div>';
                     }
 
-                    return '<div class="post-media-item"><img src="' + escapeHtml(item.media_url) + '" alt="News attachment"></div>';
+                    return '<button class="post-media-item" type="button" data-open-image="' + escapeHtml(item.media_url) + '"><img src="' + escapeHtml(item.media_url) + '" alt="News attachment"></button>';
                 }).join("") +
             "</div>";
     }
@@ -371,6 +371,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 "error"
             );
         }
+    });
+
+    media.addEventListener("click", function (event) {
+        var imageButton = event.target.closest("[data-open-image]");
+        if (!imageButton) {
+            return;
+        }
+
+        window.HollowsideAuth.openImageViewer(imageButton.getAttribute("data-open-image"), "News attachment");
     });
 
     ownerTools.addEventListener("click", async function (event) {

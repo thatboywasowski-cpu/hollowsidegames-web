@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download | Hollowside Games</title>
+    <meta name="description" content="Download a Hollowside game or engine build.">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/auth.css">
+    <link rel="stylesheet" href="/account.css">
+</head>
+<body>
+    <div class="page-shell">
+        <div class="dust-layer" aria-hidden="true"></div>
+        <header class="site-header">
+            <div class="site-header-bar">
+                <a class="brand" href="/"><span class="brand-mark">H</span><span class="brand-text"><strong>Hollowside Games</strong></span></a>
+                <nav class="nav-links" aria-label="Primary">
+                    <a class="nav-link" href="/">Home</a>
+                    <a class="nav-link" href="/help">Help</a>
+                    <a class="nav-link" href="/news">News</a>
+                    <a class="nav-link is-current" href="/downloads">Downloads</a>
+                    <a class="nav-link" href="/about">About</a>
+                    <a class="nav-link" href="/directory">Members</a>
+                    <a class="nav-link" href="/login">Login</a>
+                    <a class="nav-link" href="/signup">Sign Up</a>
+                </nav>
+            </div>
+        </header>
+        <main class="site-main">
+            <p class="page-status" id="game-status" hidden></p>
+            <section class="hero-grid">
+                <article class="hero-card">
+                    <div class="pill-row" id="game-platforms"></div>
+                    <h1 class="page-heading" id="game-title">Loading...</h1>
+                    <p class="lead" id="game-summary">Loading download details...</p>
+                    <div class="hero-actions" id="game-actions"></div>
+                </article>
+                <aside class="content-card">
+                    <div class="download-thumb" id="game-thumbnail"></div>
+                </aside>
+            </section>
+            <section class="section-block">
+                <div class="section-header">
+                    <h2>Screenshots</h2>
+                    <p>Open any screenshot to inspect it fullscreen.</p>
+                </div>
+                <div class="screenshot-grid" id="game-screenshots"></div>
+            </section>
+        </main>
+    </div>
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="/supabase-config.js"></script>
+    <script defer src="/auth-app.js"></script>
+    <script defer src="/site-shell.js"></script>
+    <script defer src="/downloads/game/game.js"></script>
+</body>
+</html>

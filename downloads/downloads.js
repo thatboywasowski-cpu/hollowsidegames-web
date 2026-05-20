@@ -7,15 +7,20 @@ document.addEventListener("DOMContentLoaded", function () {
     var categoryInput = document.getElementById("download-category");
     var summaryInput = document.getElementById("download-summary");
     var versionInput = document.getElementById("download-version");
-    var fileInput = document.getElementById("download-file");
-    var urlInput = document.getElementById("download-url");
+    var thumbnailInput = document.getElementById("download-thumbnail");
+    var screenshotsInput = document.getElementById("download-screenshots");
+    var windowsInput = document.getElementById("download-windows-file");
+    var macInput = document.getElementById("download-mac-file");
+    var linuxInput = document.getElementById("download-linux-file");
     var heading = document.getElementById("downloads-heading");
     var copy = document.getElementById("downloads-copy");
     var grid = document.getElementById("downloads-grid");
     var tabs = document.querySelectorAll("[data-download-tab]");
     var activeCategory = "games";
     var maxDownloadBytes = 200 * 1024 * 1024 * 1024;
+    var maxImageBytes = 20 * 1024 * 1024;
     var tooLargeMessage = "Item is too large! Compress this file or choose a smaller one.";
+    var platforms = ["windows", "mac", "linux"];
 
     if (!window.HollowsideAuth.isConfigured()) {
         window.HollowsideAuth.setStatus(status, "Supabase is not connected yet.", "error");
@@ -45,6 +50,47 @@ document.addEventListener("DOMContentLoaded", function () {
         return bytes.toFixed(bytes >= 10 || index === 0 ? 0 : 1) + " " + units[index];
     }
 
+    function platformIcon(platform) {
+        return '<img class="platform-icon" src="/assets/platform-' + platform + '.svg" alt="' + platform + '">';
+    }
+
+    function getPlatformUrl(item, platform) {
+        return item[platform + "_url"] || "";
+    }
+
+    async function uploadFile(file, folder, maxBytes) {
+        if (!file) {
+            return {
+                url: "",
+                path: "",
+                size: 0
+            };
+        }
+
+        if (file.size > maxBytes) {
+            throw new Error(tooLargeMessage);
+        }
+
+        var extension = (file.name.split(".").pop() || "bin").toLowerCase();
+        var path = viewerContext.id + "/" + folder + "/" + Date.now() + "-" + Math.random().toString(16).slice(2) + "." + extension;
+        var uploadResult = await supabase.storage
+            .from("downloads")
+            .upload(path, file, {
+                upsert: false,
+                cacheControl: "3600"
+            });
+
+        if (uploadResult.error) {
+            throw uploadResult.error;
+        }
+
+        return {
+            url: supabase.storage.from("downloads").getPublicUrl(path).data.publicUrl,
+            path: path,
+            size: file.size
+        };
+    }
+
     function renderItems(items) {
         heading.textContent = activeCategory === "engine" ? "Engine" : "Games";
         copy.textContent = items.length
@@ -59,19 +105,28 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         grid.innerHTML = items.map(function (item) {
+            var supported = platforms.filter(function (platform) {
+                return !!getPlatformUrl(item, platform);
+            });
+            var thumbnail = item.thumbnail_url
+                ? '<div class="download-thumb"><img src="' + escapeHtml(item.thumbnail_url) + '" alt="' + escapeHtml(item.title) + ' thumbnail"></div>'
+                : "";
             return (
                 '<article class="content-card download-card">' +
+                    thumbnail +
                     '<p class="meta">' + escapeHtml((item.category || activeCategory).toUpperCase()) + '</p>' +
                     '<h3>' + escapeHtml(item.title) + '</h3>' +
                     '<p>' + escapeHtml(item.summary || "No description provided.") + '</p>' +
+                    '<div class="platform-row">' + supported.map(platformIcon).join("") + '</div>' +
                     '<div class="download-meta">' +
                         '<span class="account-chip">' + escapeHtml(item.version || "Unversioned") + '</span>' +
                         '<span class="account-chip">' + escapeHtml(formatBytes(item.file_size_bytes)) + '</span>' +
                         '<span class="account-chip">By ' + escapeHtml(item.author_display_name || "Hollowside") + '</span>' +
                     '</div>' +
                     '<div class="account-actions">' +
-                        (viewerContext
-                            ? '<a class="account-button primary" href="' + escapeHtml(item.download_url) + '" rel="noopener" target="_blank">Download</a>'
+                        '<a class="account-button" href="/downloads/game?id=' + encodeURIComponent(item.id) + '">View Page</a>' +
+                        (viewerContext && supported.length
+                            ? '<a class="account-button primary" href="/downloads/game?id=' + encodeURIComponent(item.id) + '">Download</a>'
                             : '<a class="account-button primary" href="/login?redirect=/downloads">Log In To Download</a>') +
                     '</div>' +
                 '</article>'
@@ -125,55 +180,47 @@ document.addEventListener("DOMContentLoaded", function () {
         var category = categoryInput.value;
         var summary = summaryInput.value.trim();
         var version = versionInput.value.trim();
-        var externalUrl = urlInput.value.trim();
-        var file = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
-        var downloadUrl = externalUrl;
-        var storagePath = "";
-        var fileSize = file ? file.size : 0;
+        var thumbnailFile = thumbnailInput.files && thumbnailInput.files[0] ? thumbnailInput.files[0] : null;
+        var screenshotFiles = Array.prototype.slice.call(screenshotsInput.files || []).slice(0, 10);
+        var windowsFile = windowsInput.files && windowsInput.files[0] ? windowsInput.files[0] : null;
+        var macFile = macInput.files && macInput.files[0] ? macInput.files[0] : null;
+        var linuxFile = linuxInput.files && linuxInput.files[0] ? linuxInput.files[0] : null;
 
         if (!title) {
             titleInput.focus();
             return;
         }
 
-        if (file && file.size > maxDownloadBytes) {
-            window.HollowsideAuth.setStatus(status, tooLargeMessage, "error");
-            return;
-        }
-
-        if (!file && !downloadUrl) {
-            window.HollowsideAuth.setStatus(status, "Upload a file or provide a download URL.", "error");
+        if (!windowsFile && !macFile && !linuxFile) {
+            window.HollowsideAuth.setStatus(status, "Upload at least one Windows, Mac, or Linux build.", "error");
             return;
         }
 
         try {
             window.HollowsideAuth.setBusy(form, true);
 
-            if (file) {
-                var extension = (file.name.split(".").pop() || "bin").toLowerCase();
-                storagePath = viewerContext.id + "/downloads/" + Date.now() + "." + extension;
-                var uploadResult = await supabase.storage
-                    .from("downloads")
-                    .upload(storagePath, file, {
-                        upsert: false,
-                        cacheControl: "3600"
-                    });
-
-                if (uploadResult.error) {
-                    throw uploadResult.error;
-                }
-
-                downloadUrl = supabase.storage.from("downloads").getPublicUrl(storagePath).data.publicUrl;
+            var thumbnailUpload = thumbnailFile ? await uploadFile(thumbnailFile, "thumbnails", maxImageBytes) : { url: "" };
+            var screenshotUploads = [];
+            for (var screenshotIndex = 0; screenshotIndex < screenshotFiles.length; screenshotIndex += 1) {
+                screenshotUploads.push(await uploadFile(screenshotFiles[screenshotIndex], "screenshots", maxImageBytes));
             }
+
+            var windowsUpload = await uploadFile(windowsFile, "windows", maxDownloadBytes);
+            var macUpload = await uploadFile(macFile, "mac", maxDownloadBytes);
+            var linuxUpload = await uploadFile(linuxFile, "linux", maxDownloadBytes);
+            var totalSize = windowsUpload.size + macUpload.size + linuxUpload.size;
 
             var createResponse = await supabase.rpc("create_download_entry", {
                 p_category: category,
                 p_title: title,
                 p_summary: summary,
                 p_version: version,
-                p_download_url: downloadUrl,
-                p_storage_path: storagePath,
-                p_file_size_bytes: fileSize
+                p_thumbnail_url: thumbnailUpload.url,
+                p_screenshot_urls: screenshotUploads.map(function (item) { return item.url; }),
+                p_windows_url: windowsUpload.url,
+                p_mac_url: macUpload.url,
+                p_linux_url: linuxUpload.url,
+                p_file_size_bytes: totalSize
             });
 
             if (createResponse.error) {

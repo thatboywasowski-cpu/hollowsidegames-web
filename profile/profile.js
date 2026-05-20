@@ -280,7 +280,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         return '<div class="post-media-item"><video controls preload="metadata" src="' + escapeHtml(item.media_url) + '"></video></div>';
                     }
 
-                    return '<div class="post-media-item"><img src="' + escapeHtml(item.media_url) + '" alt="Post attachment"></div>';
+                    return '<button class="post-media-item" type="button" data-open-image="' + escapeHtml(item.media_url) + '"><img src="' + escapeHtml(item.media_url) + '" alt="Post attachment"></button>';
                 }).join("") +
             "</div>"
         );
@@ -510,6 +510,12 @@ document.addEventListener("DOMContentLoaded", function () {
         var deletePost = event.target.hasAttribute("data-profile-delete");
         var reportPost = event.target.getAttribute("data-report-post");
         var reportAuthor = event.target.getAttribute("data-post-author");
+        var imageButton = event.target.closest("[data-open-image]");
+
+        if (imageButton) {
+            window.HollowsideAuth.openImageViewer(imageButton.getAttribute("data-open-image"), "Post attachment");
+            return;
+        }
 
         if (editToggle || editCancel) {
             var host = event.target.closest("[data-post-id]");

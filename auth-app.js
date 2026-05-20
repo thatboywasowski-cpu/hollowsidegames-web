@@ -355,9 +355,9 @@
             var url = URL.createObjectURL(file);
 
             image.onload = function () {
-                URL.revokeObjectURL(url);
                 resolve({
                     image: image,
+                    url: url,
                     width: image.naturalWidth,
                     height: image.naturalHeight
                 });
@@ -382,6 +382,7 @@
         return new Promise(function (resolve, reject) {
             getImageDimensions(file).then(function (loaded) {
                 var image = loaded.image;
+                var objectUrl = loaded.url;
                 var backdrop = document.createElement("div");
                 var scale = Math.max(outputWidth / loaded.width, outputHeight / loaded.height);
                 var userScale = 1;
@@ -413,7 +414,7 @@
                 var range = backdrop.querySelector('input[type="range"]');
                 var cancel = backdrop.querySelector("[data-media-cancel]");
                 var confirm = backdrop.querySelector("[data-media-confirm]");
-                preview.src = image.src;
+                preview.src = objectUrl;
 
                 function drawPreview() {
                     var stageRect = stage.getBoundingClientRect();
@@ -424,6 +425,7 @@
                 }
 
                 function cleanup(value) {
+                    URL.revokeObjectURL(objectUrl);
                     backdrop.remove();
                     resolve(value);
                 }
@@ -495,6 +497,47 @@
                 window.requestAnimationFrame(drawPreview);
             }).catch(reject);
         });
+    }
+
+    function openImageViewer(src, altText) {
+        if (!src) {
+            return;
+        }
+
+        var backdrop = document.createElement("div");
+        var scale = 1;
+        backdrop.className = "image-viewer-backdrop";
+        backdrop.innerHTML =
+            '<button class="image-viewer-close" type="button" aria-label="Close image">X</button>' +
+            '<div class="image-viewer-frame">' +
+                '<img src="' + escapeHtml(src) + '" alt="' + escapeHtml(altText || "Expanded image") + '">' +
+            "</div>";
+
+        var image = backdrop.querySelector("img");
+        function syncScale() {
+            image.style.transform = "scale(" + scale + ")";
+        }
+
+        backdrop.addEventListener("click", function (event) {
+            if (event.target === backdrop || event.target.classList.contains("image-viewer-close")) {
+                backdrop.remove();
+            }
+        });
+
+        image.addEventListener("click", function (event) {
+            event.stopPropagation();
+            scale = scale >= 2.5 ? 1 : scale + 0.5;
+            syncScale();
+        });
+
+        backdrop.addEventListener("wheel", function (event) {
+            event.preventDefault();
+            scale = Math.max(1, Math.min(4, scale + (event.deltaY < 0 ? 0.2 : -0.2)));
+            syncScale();
+        }, { passive: false });
+
+        document.body.appendChild(backdrop);
+        syncScale();
     }
 
     async function touchActivity(client) {
@@ -572,6 +615,7 @@
         getVerificationBadge: getVerificationBadge,
         ensureFavicon: ensureFavicon,
         editImageFile: editImageFile,
+        openImageViewer: openImageViewer,
         touchActivity: touchActivity,
         normalizeRedirectPath: normalizeRedirectPath,
         startOAuthSignIn: startOAuthSignIn

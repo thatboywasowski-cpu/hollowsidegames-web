@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return '<div class="news-featured-media"><video controls preload="metadata" src="' + escapeHtml(item.media_url) + '"></video></div>';
         }
 
-        return '<div class="news-featured-media"><img src="' + escapeHtml(item.media_url) + '" alt="News attachment"></div>';
+        return '<button class="news-featured-media" type="button" data-open-image="' + escapeHtml(item.media_url) + '"><img src="' + escapeHtml(item.media_url) + '" alt="News attachment"></button>';
     }
 
     async function uploadPostMediaFiles(postId, files) {
@@ -348,6 +348,12 @@ document.addEventListener("DOMContentLoaded", function () {
         var editToggle = event.target.hasAttribute("data-news-edit-toggle");
         var editCancel = event.target.hasAttribute("data-news-edit-cancel");
         var deletePost = event.target.hasAttribute("data-news-delete");
+        var imageButton = event.target.closest("[data-open-image]");
+
+        if (imageButton) {
+            window.HollowsideAuth.openImageViewer(imageButton.getAttribute("data-open-image"), "News attachment");
+            return;
+        }
 
         if (reaction && postId) {
             await handleReaction(postId, reaction, event.target);

@@ -98,15 +98,34 @@
                             </div>
 
                             <div class="field">
-                                <label for="download-file">Upload File</label>
-                                <input id="download-file" type="file">
-                                <p class="file-hint">Maximum listed file size: 200 GB.</p>
+                                <label for="download-thumbnail">Thumbnail</label>
+                                <input id="download-thumbnail" type="file" accept="image/png,image/jpeg,image/webp">
+                                <p class="file-hint">Shown on game cards. Max 20 MB.</p>
                             </div>
                         </div>
 
                         <div class="field">
-                            <label for="download-url">Or External Download URL</label>
-                            <input id="download-url" type="url" placeholder="https://...">
+                            <label for="download-screenshots">Screenshots</label>
+                            <input id="download-screenshots" type="file" accept="image/png,image/jpeg,image/webp" multiple>
+                            <p class="file-hint">Optional. Up to 10 screenshots, 20 MB each.</p>
+                        </div>
+
+                        <div class="composer-grid">
+                            <div class="field">
+                                <label for="download-windows-file">Windows Build</label>
+                                <input id="download-windows-file" type="file">
+                            </div>
+
+                            <div class="field">
+                                <label for="download-mac-file">Mac Build</label>
+                                <input id="download-mac-file" type="file">
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label for="download-linux-file">Linux Build</label>
+                            <input id="download-linux-file" type="file">
+                            <p class="file-hint">Provide one or more platform builds. Each build can be listed up to 200 GB.</p>
                         </div>
 
                         <div class="account-actions">
