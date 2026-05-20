@@ -171,7 +171,7 @@ document.addEventListener("DOMContentLoaded", function () {
     form.addEventListener("submit", async function (event) {
         event.preventDefault();
 
-        if (!viewerContext || !viewerContext.can_publish_downloads) {
+        if (!window.HollowsideAuth.canPublishDownloads(viewerContext)) {
             window.HollowsideAuth.setStatus(status, "You do not have permission to publish downloads.", "error");
             return;
         }
@@ -247,7 +247,7 @@ document.addEventListener("DOMContentLoaded", function () {
             viewerContext = !contextResponse.error && contextResponse.data && contextResponse.data[0]
                 ? window.HollowsideAuth.applyRoleEmulation(contextResponse.data[0], null)
                 : null;
-            var canUpload = !!(viewerContext && viewerContext.can_publish_downloads);
+            var canUpload = window.HollowsideAuth.canPublishDownloads(viewerContext);
             uploader.hidden = !canUpload;
             uploadInfo.hidden = !canUpload;
         } catch (error) {

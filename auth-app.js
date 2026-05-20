@@ -402,6 +402,21 @@
         return context;
     }
 
+    function canPublishDownloads(accountContext) {
+        if (!accountContext) {
+            return false;
+        }
+
+        if (accountContext.can_publish_downloads) {
+            return true;
+        }
+
+        var roleKey = String(accountContext.effective_role_key || accountContext.role_key || "").toLowerCase();
+        var roleLabel = String(accountContext.role_label || "").toLowerCase().replace(/[\s-]+/g, "_");
+        return ["owner", "co_owner", "developer"].indexOf(roleKey) !== -1 ||
+            ["owner", "co_owner", "developer"].indexOf(roleLabel) !== -1;
+    }
+
     function getVerificationBadge(record, ariaLabel) {
         if (!record || !record.is_verified) {
             return "";
@@ -707,6 +722,7 @@
         getRoleEmulation: getRoleEmulation,
         setRoleEmulation: setRoleEmulation,
         applyRoleEmulation: applyRoleEmulation,
+        canPublishDownloads: canPublishDownloads,
         emulationRoles: emulationRoles,
         getVerificationBadge: getVerificationBadge,
         ensureFavicon: ensureFavicon,

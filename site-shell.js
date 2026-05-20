@@ -303,7 +303,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!banned) {
             menuLinks.unshift(getMenuLink("View full profile", publicProfileHref, "public"));
             menuLinks.splice(1, 0, getMenuLink("Browse members", "/directory", "search"));
-            menuLinks.splice(2, 0, getMenuLink("Downloads", "/downloads", accountContext && accountContext.can_publish_downloads ? "upload" : "browse"));
+            menuLinks.splice(2, 0, getMenuLink("Downloads", "/downloads", window.HollowsideAuth.canPublishDownloads(accountContext) ? "upload" : "browse"));
         }
 
         if (canOpenModeration) {
