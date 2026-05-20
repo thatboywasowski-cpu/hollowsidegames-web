@@ -38,6 +38,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var supabase = window.HollowsideAuth.createClient();
     var viewerContext = null;
     var profileCard = null;
+    var replyingByPost = {};
 
     function escapeHtml(value) {
         return window.HollowsideAuth.escapeHtml(value);
@@ -286,6 +287,90 @@ document.addEventListener("DOMContentLoaded", function () {
         );
     }
 
+    function getCommentMedia(comment) {
+        if (!comment || !comment.media_urls) {
+            return [];
+        }
+
+        if (Array.isArray(comment.media_urls)) {
+            return comment.media_urls;
+        }
+
+        try {
+            var parsed = JSON.parse(comment.media_urls);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+            return [];
+        }
+    }
+
+    function renderCommentMedia(comment) {
+        var urls = getCommentMedia(comment);
+        if (!urls.length || comment.viewer_reaction === "dislike") {
+            return "";
+        }
+
+        return (
+            '<div class="comment-media-grid">' +
+                urls.map(function (url) {
+                    return '<button class="comment-media-item" type="button" data-open-image="' + escapeHtml(url) + '"><img src="' + escapeHtml(url) + '" alt="Comment attachment"></button>';
+                }).join("") +
+            "</div>"
+        );
+    }
+
+    function buildCommentTree(items) {
+        var lookup = {};
+        var roots = [];
+
+        items.forEach(function (comment) {
+            comment.replies = [];
+            lookup[String(comment.id)] = comment;
+        });
+
+        items.forEach(function (comment) {
+            if (comment.parent_id && lookup[String(comment.parent_id)]) {
+                lookup[String(comment.parent_id)].replies.push(comment);
+            } else {
+                roots.push(comment);
+            }
+        });
+
+        return roots;
+    }
+
+    function renderComment(comment, depth) {
+        var badge = window.HollowsideAuth.getVerificationBadge({
+            is_verified: comment.author_is_verified,
+            verification_mode: comment.author_verification_mode
+        }, "Verified Hollowside account");
+        var hidden = comment.viewer_reaction === "dislike";
+        var replyButton = viewerContext && viewerContext.can_comment_posts
+            ? '<button class="comment-action" type="button" data-comment-reply data-comment-id="' + escapeHtml(comment.id) + '" data-author-name="' + escapeHtml(comment.author_display_name) + '">Reply</button>'
+            : "";
+        var reactionButtons = viewerContext
+            ? '<button class="comment-action' + (comment.viewer_reaction === "like" ? " is-active" : "") + '" type="button" data-comment-reaction="like" data-comment-id="' + escapeHtml(comment.id) + '">Like - ' + window.HollowsideAuth.formatCountLabel(comment.like_count, "Like", "Likes") + '</button>' +
+              '<button class="comment-action' + (comment.viewer_reaction === "dislike" ? " is-active" : "") + '" type="button" data-comment-reaction="dislike" data-comment-id="' + escapeHtml(comment.id) + '">Dislike - ' + window.HollowsideAuth.formatCountLabel(comment.dislike_count, "Dislike", "Dislikes") + '</button>'
+            : "";
+
+        return (
+            '<article class="comment-card' + (depth ? " is-reply" : "") + (hidden ? " is-hidden-comment" : "") + '" data-comment-id="' + escapeHtml(comment.id) + '">' +
+                '<div class="comment-meta">' +
+                    '<strong>' + escapeHtml(comment.author_display_name) + '</strong>' +
+                    '<span class="identity-line">@' + escapeHtml(comment.author_username) + badge + '</span>' +
+                    '<span>' + escapeHtml(new Date(comment.created_at).toLocaleString()) + '</span>' +
+                '</div>' +
+                (hidden
+                    ? '<p class="comment-hidden-copy">This comment will no longer be shown to you.</p>'
+                    : '<p>' + escapeHtml(comment.body || "") + '</p>' + renderCommentMedia(comment)) +
+                '<div class="comment-actions">' + reactionButtons + replyButton + '</div>' +
+            '</article>' +
+            (comment.replies || []).map(function (reply) {
+                return renderComment(reply, depth + 1);
+            }).join("")
+        );
+    }
+
     function renderComments(items) {
         if (!items.length) {
             return '<p class="post-empty">No comments yet.</p>';
@@ -293,25 +378,49 @@ document.addEventListener("DOMContentLoaded", function () {
 
         return (
             '<div class="comment-list">' +
-                items.map(function (comment) {
-                    var badge = window.HollowsideAuth.getVerificationBadge({
-                        is_verified: comment.author_is_verified,
-                        verification_mode: comment.author_verification_mode
-                    }, "Verified Hollowside account");
-
-                    return (
-                        '<article class="comment-card">' +
-                            '<div class="comment-meta">' +
-                                '<strong>' + escapeHtml(comment.author_display_name) + '</strong>' +
-                                '<span class="identity-line">@' + escapeHtml(comment.author_username) + badge + '</span>' +
-                                '<span>' + escapeHtml(new Date(comment.created_at).toLocaleString()) + '</span>' +
-                            '</div>' +
-                            '<p>' + escapeHtml(comment.body) + '</p>' +
-                        '</article>'
-                    );
+                buildCommentTree(items).map(function (comment) {
+                    return renderComment(comment, 0);
                 }).join("") +
             "</div>"
         );
+    }
+
+    function renderCommentForm(postId) {
+        return (
+            '<form class="comment-form" data-comment-form data-post-id="' + escapeHtml(postId) + '">' +
+                '<div class="comment-input-row">' +
+                    '<label class="comment-image-button" title="Add image">' +
+                        '<input data-comment-image-input type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>' +
+                        '<img src="/Hollowside%20Games%20picture%20comment.png" alt="Add image">' +
+                    '</label>' +
+                    '<textarea maxlength="1500" placeholder="Comment"></textarea>' +
+                '</div>' +
+                '<span class="comment-file-name" data-comment-file-name></span>' +
+                '<div class="account-actions"><button class="account-button primary" type="submit">Comment</button></div>' +
+            '</form>'
+        );
+    }
+
+    function resetReplyState(postId) {
+        delete replyingByPost[postId];
+        var form = postFeed.querySelector('[data-comment-form][data-post-id="' + postId + '"]');
+        if (!form) {
+            return;
+        }
+
+        form.removeAttribute("data-parent-id");
+        var textarea = form.querySelector("textarea");
+        if (textarea) {
+            textarea.placeholder = "Comment";
+        }
+    }
+
+    function syncCommentFileName(form) {
+        var input = form.querySelector("[data-comment-image-input]");
+        var label = form.querySelector("[data-comment-file-name]");
+        if (label) {
+            label.textContent = input && input.files && input.files[0] ? input.files[0].name : "";
+        }
     }
 
     function canManageProfilePost(post) {
@@ -412,6 +521,49 @@ document.addEventListener("DOMContentLoaded", function () {
         await Promise.all(uploads);
     }
 
+    async function uploadCommentImage(postId, commentId, file) {
+        if (!file) {
+            return;
+        }
+
+        if (!file.type || file.type.indexOf("image/") !== 0) {
+            throw new Error("Please choose an image file for the comment.");
+        }
+
+        if (file.size > 20 * 1024 * 1024) {
+            throw new Error("Item is too large! Compress this file or choose a smaller one.");
+        }
+
+        var extension = (file.name.split(".").pop() || "png").toLowerCase();
+        var path = viewerContext.id + "/comments/" + postId + "/" + commentId + "-" + Date.now() + "." + extension;
+        var uploadResult = await supabase.storage
+            .from("post-media")
+            .upload(path, file, {
+                upsert: false,
+                cacheControl: "3600"
+            });
+
+        if (uploadResult.error) {
+            throw uploadResult.error;
+        }
+
+        var publicUrlResult = supabase.storage
+            .from("post-media")
+            .getPublicUrl(path);
+
+        var attachResult = await supabase.rpc("attach_comment_media", {
+            p_comment_id: commentId,
+            p_media_type: "image",
+            p_media_url: publicUrlResult.data.publicUrl,
+            p_media_path: path,
+            p_sort_order: 0
+        });
+
+        if (attachResult.error) {
+            throw attachResult.error;
+        }
+    }
+
     async function loadProfilePosts() {
         try {
             var response = await supabase.rpc("get_post_feed", {
@@ -475,10 +627,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         renderOwnerTools(post) +
                         renderComments(commentsResponse.data || []) +
                         (viewerContext && viewerContext.can_comment_posts
-                            ? '<form class="comment-form" data-comment-form data-post-id="' + escapeHtml(post.id) + '">' +
-                                '<textarea maxlength="1500" placeholder="Write a comment..."></textarea>' +
-                                '<div class="account-actions"><button class="account-button primary" type="submit">Comment</button></div>' +
-                              '</form>'
+                            ? renderCommentForm(post.id)
                             : (!viewerContext
                                 ? '<p class="account-note">Log in to react or comment.</p>'
                                 : (viewerContext.restriction_label === "Suspended"
@@ -503,6 +652,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     postFeed.addEventListener("click", async function (event) {
+        var commentReaction = event.target.getAttribute("data-comment-reaction");
+        var commentId = event.target.getAttribute("data-comment-id");
+        var replyButton = event.target.closest("[data-comment-reply]");
         var reaction = event.target.getAttribute("data-reaction");
         var postId = event.target.getAttribute("data-post-id");
         var editToggle = event.target.hasAttribute("data-profile-edit-toggle");
@@ -514,6 +666,72 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (imageButton) {
             window.HollowsideAuth.openImageViewer(imageButton.getAttribute("data-open-image"), "Post attachment");
+            return;
+        }
+
+        if (replyButton) {
+            if (!viewerContext) {
+                window.location.href = "/login?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
+                return;
+            }
+
+            var postCardElement = replyButton.closest("[data-post-id]");
+            var replyPostId = postCardElement ? postCardElement.getAttribute("data-post-id") : "";
+            if (!replyPostId) {
+                return;
+            }
+
+            replyingByPost[replyPostId] = {
+                id: replyButton.getAttribute("data-comment-id"),
+                name: replyButton.getAttribute("data-author-name") || "this user"
+            };
+
+            var form = postCardElement.querySelector("[data-comment-form]");
+            if (form) {
+                form.setAttribute("data-parent-id", replyingByPost[replyPostId].id);
+                var textarea = form.querySelector("textarea");
+                if (textarea) {
+                    textarea.placeholder = "Reply to " + replyingByPost[replyPostId].name + "'s comment";
+                    textarea.focus();
+                }
+            }
+            return;
+        }
+
+        if (commentReaction && commentId) {
+            try {
+                if (!viewerContext) {
+                    window.location.href = "/login?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
+                    return;
+                }
+
+                if (event.target.classList.contains("is-active")) {
+                    var clearCommentResult = await supabase.rpc("clear_comment_reaction", {
+                        p_comment_id: Number(commentId)
+                    });
+
+                    if (clearCommentResult.error) {
+                        throw clearCommentResult.error;
+                    }
+                } else {
+                    var commentReactionResult = await supabase.rpc("set_comment_reaction", {
+                        p_comment_id: Number(commentId),
+                        p_reaction_type: commentReaction
+                    });
+
+                    if (commentReactionResult.error) {
+                        throw commentReactionResult.error;
+                    }
+                }
+
+                loadProfilePosts();
+            } catch (error) {
+                window.HollowsideAuth.setStatus(
+                    status,
+                    error && error.message ? error.message : "Something went wrong while reacting to the comment.",
+                    "error"
+                );
+            }
             return;
         }
 
@@ -597,6 +815,27 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
+    postFeed.addEventListener("change", function (event) {
+        var form = event.target.closest("[data-comment-form]");
+        if (form && event.target.hasAttribute("data-comment-image-input")) {
+            syncCommentFileName(form);
+        }
+    });
+
+    postFeed.addEventListener("focusout", function (event) {
+        var form = event.target.closest("[data-comment-form]");
+        if (!form) {
+            return;
+        }
+
+        window.setTimeout(function () {
+            var postId = form.getAttribute("data-post-id");
+            if (postId && replyingByPost[postId] && !form.contains(document.activeElement)) {
+                resetReplyState(postId);
+            }
+        }, 0);
+    });
+
     postFeed.addEventListener("submit", async function (event) {
         var form = event.target;
         if (form.hasAttribute("data-profile-edit-form")) {
@@ -643,9 +882,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
         var postId = form.getAttribute("data-post-id");
         var textarea = form.querySelector("textarea");
+        var fileInput = form.querySelector("[data-comment-image-input]");
         var body = textarea.value.trim();
+        var imageFile = fileInput && fileInput.files ? fileInput.files[0] : null;
 
-        if (!body) {
+        if (!body && !imageFile) {
             textarea.focus();
             return;
         }
@@ -654,19 +895,31 @@ document.addEventListener("DOMContentLoaded", function () {
             var commentResponse = await supabase.rpc("create_post_comment", {
                 p_post_id: postId,
                 p_body: body,
-                p_parent_id: null
+                p_parent_id: form.getAttribute("data-parent-id") ? Number(form.getAttribute("data-parent-id")) : null
             });
 
             if (commentResponse.error) {
                 throw commentResponse.error;
             }
 
+            if (imageFile) {
+                await uploadCommentImage(postId, commentResponse.data.id, imageFile);
+            }
+
             textarea.value = "";
+            if (fileInput) {
+                fileInput.value = "";
+            }
+            syncCommentFileName(form);
+            resetReplyState(postId);
             loadProfilePosts();
         } catch (error) {
+            var commentMessage = error && error.message && /size|large|payload|limit|exceed/i.test(error.message)
+                ? "Item is too large! Compress this file or choose a smaller one."
+                : (error && error.message ? error.message : "Something went wrong while posting your comment.");
             window.HollowsideAuth.setStatus(
                 status,
-                error && error.message ? error.message : "Something went wrong while posting your comment.",
+                commentMessage,
                 "error"
             );
         }

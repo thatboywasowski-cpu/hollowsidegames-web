@@ -1541,6 +1541,15 @@ select option:disabled {
     background: rgba(255, 255, 255, 0.03);
 }
 
+.comment-card.is-reply {
+    margin-left: min(2rem, 6vw);
+}
+
+.comment-card.is-hidden-comment {
+    border-style: dashed;
+    background: rgba(255, 255, 255, 0.02);
+}
+
 .comment-meta {
     display: flex;
     align-items: center;
@@ -1548,6 +1557,59 @@ select option:disabled {
     flex-wrap: wrap;
     color: var(--muted);
     font-size: 0.88rem;
+}
+
+.comment-actions {
+    margin-top: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+}
+
+.comment-action {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.comment-action:hover,
+.comment-action:focus-visible,
+.comment-action.is-active {
+    color: var(--text);
+    text-decoration: underline;
+}
+
+.comment-media-grid {
+    margin-top: 0.85rem;
+    display: grid;
+    grid-template-columns: minmax(0, 260px);
+    gap: 0.65rem;
+}
+
+.comment-media-item {
+    padding: 0;
+    overflow: hidden;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.03);
+    cursor: zoom-in;
+}
+
+.comment-media-item img {
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+    display: block;
+}
+
+.comment-hidden-copy {
+    color: var(--muted);
+    font-style: italic;
 }
 
 .composer-card {
@@ -1587,6 +1649,41 @@ select option:disabled {
     margin-top: 1rem;
 }
 
+.comment-input-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.7rem;
+    align-items: start;
+}
+
+.comment-image-button {
+    width: 3.2rem;
+    height: 3.2rem;
+    padding: 0.68rem;
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+}
+
+.comment-image-button:hover,
+.comment-image-button:focus-visible {
+    border-color: rgba(255, 255, 255, 0.26);
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.comment-image-button img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.comment-file-name {
+    color: var(--dim);
+    font-size: 0.85rem;
+}
+
 .comment-form textarea,
 .composer-form textarea {
     min-height: 5.4rem;
@@ -1610,6 +1707,15 @@ select option:disabled {
     .post-media-grid,
     .composer-grid {
         grid-template-columns: 1fr;
+    }
+
+    .comment-input-row {
+        grid-template-columns: 1fr;
+    }
+
+    .comment-image-button {
+        width: 3rem;
+        height: 3rem;
     }
 }
 

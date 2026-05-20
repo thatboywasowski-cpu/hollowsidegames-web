@@ -33,6 +33,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var supabase = window.HollowsideAuth.createClient();
     var viewerContext = null;
     var postCard = null;
+    var replyingTo = null;
 
     function escapeHtml(value) {
         return window.HollowsideAuth.escapeHtml(value);
@@ -87,6 +88,90 @@ document.addEventListener("DOMContentLoaded", function () {
             "</div>";
     }
 
+    function getCommentMedia(comment) {
+        if (!comment || !comment.media_urls) {
+            return [];
+        }
+
+        if (Array.isArray(comment.media_urls)) {
+            return comment.media_urls;
+        }
+
+        try {
+            var parsed = JSON.parse(comment.media_urls);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+            return [];
+        }
+    }
+
+    function renderCommentMedia(comment) {
+        var urls = getCommentMedia(comment);
+        if (!urls.length || comment.viewer_reaction === "dislike") {
+            return "";
+        }
+
+        return (
+            '<div class="comment-media-grid">' +
+                urls.map(function (url) {
+                    return '<button class="comment-media-item" type="button" data-open-image="' + escapeHtml(url) + '"><img src="' + escapeHtml(url) + '" alt="Comment attachment"></button>';
+                }).join("") +
+            "</div>"
+        );
+    }
+
+    function buildCommentTree(items) {
+        var lookup = {};
+        var roots = [];
+
+        items.forEach(function (comment) {
+            comment.replies = [];
+            lookup[String(comment.id)] = comment;
+        });
+
+        items.forEach(function (comment) {
+            if (comment.parent_id && lookup[String(comment.parent_id)]) {
+                lookup[String(comment.parent_id)].replies.push(comment);
+            } else {
+                roots.push(comment);
+            }
+        });
+
+        return roots;
+    }
+
+    function renderComment(comment, depth) {
+        var badge = window.HollowsideAuth.getVerificationBadge({
+            is_verified: comment.author_is_verified,
+            verification_mode: comment.author_verification_mode
+        }, "Verified Hollowside account");
+        var hidden = comment.viewer_reaction === "dislike";
+        var replyButton = viewerContext && viewerContext.can_comment_posts
+            ? '<button class="comment-action" type="button" data-comment-reply data-comment-id="' + escapeHtml(comment.id) + '" data-author-name="' + escapeHtml(comment.author_display_name) + '">Reply</button>'
+            : "";
+        var reactionButtons = viewerContext
+            ? '<button class="comment-action' + (comment.viewer_reaction === "like" ? " is-active" : "") + '" type="button" data-comment-reaction="like" data-comment-id="' + escapeHtml(comment.id) + '">Like - ' + window.HollowsideAuth.formatCountLabel(comment.like_count, "Like", "Likes") + '</button>' +
+              '<button class="comment-action' + (comment.viewer_reaction === "dislike" ? " is-active" : "") + '" type="button" data-comment-reaction="dislike" data-comment-id="' + escapeHtml(comment.id) + '">Dislike - ' + window.HollowsideAuth.formatCountLabel(comment.dislike_count, "Dislike", "Dislikes") + '</button>'
+            : "";
+
+        return (
+            '<article class="comment-card' + (depth ? " is-reply" : "") + (hidden ? " is-hidden-comment" : "") + '" data-comment-id="' + escapeHtml(comment.id) + '">' +
+                '<div class="comment-meta">' +
+                    '<strong>' + escapeHtml(comment.author_display_name) + '</strong>' +
+                    '<span class="identity-line">@' + escapeHtml(comment.author_username) + badge + '</span>' +
+                    '<span>' + escapeHtml(formatDateTime(comment.created_at)) + '</span>' +
+                '</div>' +
+                (hidden
+                    ? '<p class="comment-hidden-copy">This comment will no longer be shown to you.</p>'
+                    : '<p>' + escapeHtml(comment.body || "") + '</p>' + renderCommentMedia(comment)) +
+                '<div class="comment-actions">' + reactionButtons + replyButton + '</div>' +
+            '</article>' +
+            (comment.replies || []).map(function (reply) {
+                return renderComment(reply, depth + 1);
+            }).join("")
+        );
+    }
+
     function renderComments(items) {
         commentsCopy.textContent = items.length ? items.length + " comment" + (items.length === 1 ? "" : "s") : "No comments yet.";
 
@@ -97,49 +182,107 @@ document.addEventListener("DOMContentLoaded", function () {
 
         comments.innerHTML =
             '<div class="comment-list">' +
-                items.map(function (comment) {
-                    var badge = window.HollowsideAuth.getVerificationBadge({
-                        is_verified: comment.author_is_verified,
-                        verification_mode: comment.author_verification_mode
-                    }, "Verified Hollowside account");
-
-                    return (
-                        '<article class="comment-card">' +
-                            '<div class="comment-meta">' +
-                                '<strong>' + escapeHtml(comment.author_display_name) + '</strong>' +
-                                '<span class="identity-line">@' + escapeHtml(comment.author_username) + badge + '</span>' +
-                                '<span>' + escapeHtml(formatDateTime(comment.created_at)) + '</span>' +
-                            '</div>' +
-                            '<p>' + escapeHtml(comment.body) + '</p>' +
-                        '</article>'
-                    );
+                buildCommentTree(items).map(function (comment) {
+                    return renderComment(comment, 0);
                 }).join("") +
             "</div>";
     }
 
-    function renderCommentForm() {
-    if (!viewerContext) {
-        commentFormSlot.innerHTML = '<p class="account-note">Log in to react or comment on this post.</p>';
-        return;
-    }
-
-    if (!viewerContext.can_comment_posts) {
-        if (viewerContext.restriction_label === "Suspended") {
-            commentFormSlot.innerHTML = '<p class="account-note">Suspended accounts can still react, but commenting is paused until the suspension ends.</p>';
-        } else if (viewerContext.restriction_label === "Banned") {
-            commentFormSlot.innerHTML = '<p class="account-note">Banned accounts cannot comment. News reading stays available, but community actions are locked.</p>';
-        } else {
-            commentFormSlot.innerHTML = '<p class="account-note">Comments unlock automatically once an account becomes a Trusted Member or higher.</p>';
+    function resetReplyState() {
+        replyingTo = null;
+        var form = document.getElementById("single-post-comment-form");
+        if (!form) {
+            return;
         }
-        return;
+
+        form.removeAttribute("data-parent-id");
+        var textarea = form.querySelector("textarea");
+        if (textarea) {
+            textarea.placeholder = "Comment";
+        }
     }
 
-    commentFormSlot.innerHTML =
-        '<form class="comment-form" id="single-post-comment-form" action="#" method="post">' +
-            '<textarea maxlength="1500" placeholder="Write a comment..."></textarea>' +
-            '<div class="account-actions"><button class="account-button primary" type="submit">Comment</button></div>' +
-        "</form>";
-}
+    function syncCommentFileName(form) {
+        var input = form.querySelector('[data-comment-image-input]');
+        var label = form.querySelector("[data-comment-file-name]");
+        if (label) {
+            label.textContent = input && input.files && input.files[0] ? input.files[0].name : "";
+        }
+    }
+
+    function renderCommentForm() {
+        if (!viewerContext) {
+            commentFormSlot.innerHTML = '<p class="account-note">Log in to react or comment on this post.</p>';
+            return;
+        }
+
+        if (!viewerContext.can_comment_posts) {
+            if (viewerContext.restriction_label === "Suspended") {
+                commentFormSlot.innerHTML = '<p class="account-note">Suspended accounts can still react, but commenting is paused until the suspension ends.</p>';
+            } else if (viewerContext.restriction_label === "Banned") {
+                commentFormSlot.innerHTML = '<p class="account-note">Banned accounts cannot comment. News reading stays available, but community actions are locked.</p>';
+            } else {
+                commentFormSlot.innerHTML = '<p class="account-note">Comments unlock automatically once an account becomes a Trusted Member or higher.</p>';
+            }
+            return;
+        }
+
+        commentFormSlot.innerHTML =
+            '<form class="comment-form" id="single-post-comment-form" action="#" method="post">' +
+                '<div class="comment-input-row">' +
+                    '<label class="comment-image-button" title="Add image">' +
+                        '<input data-comment-image-input type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>' +
+                        '<img src="/Hollowside%20Games%20picture%20comment.png" alt="Add image">' +
+                    '</label>' +
+                    '<textarea maxlength="1500" placeholder="Comment"></textarea>' +
+                '</div>' +
+                '<span class="comment-file-name" data-comment-file-name></span>' +
+                '<div class="account-actions"><button class="account-button primary" type="submit">Comment</button></div>' +
+            "</form>";
+    }
+
+    async function uploadCommentImage(commentId, file) {
+        if (!file) {
+            return;
+        }
+
+        if (!file.type || file.type.indexOf("image/") !== 0) {
+            throw new Error("Please choose an image file for the comment.");
+        }
+
+        if (file.size > 20 * 1024 * 1024) {
+            throw new Error("Item is too large! Compress this file or choose a smaller one.");
+        }
+
+        var extension = (file.name.split(".").pop() || "png").toLowerCase();
+        var path = viewerContext.id + "/comments/" + postId + "/" + commentId + "-" + Date.now() + "." + extension;
+        var uploadResult = await supabase.storage
+            .from("post-media")
+            .upload(path, file, {
+                upsert: false,
+                cacheControl: "3600"
+            });
+
+        if (uploadResult.error) {
+            throw uploadResult.error;
+        }
+
+        var publicUrlResult = supabase.storage
+            .from("post-media")
+            .getPublicUrl(path);
+
+        var attachResult = await supabase.rpc("attach_comment_media", {
+            p_comment_id: commentId,
+            p_media_type: "image",
+            p_media_url: publicUrlResult.data.publicUrl,
+            p_media_path: path,
+            p_sort_order: 0
+        });
+
+        if (attachResult.error) {
+            throw attachResult.error;
+        }
+    }
 
 
     function syncCounts(post) {
@@ -476,16 +619,112 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
+    comments.addEventListener("click", async function (event) {
+        var imageButton = event.target.closest("[data-open-image]");
+        var reaction = event.target.getAttribute("data-comment-reaction");
+        var commentId = event.target.getAttribute("data-comment-id");
+        var replyButton = event.target.closest("[data-comment-reply]");
+
+        if (imageButton) {
+            window.HollowsideAuth.openImageViewer(imageButton.getAttribute("data-open-image"), "Comment attachment");
+            return;
+        }
+
+        if (replyButton) {
+            if (!viewerContext) {
+                window.location.href = "/login?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
+                return;
+            }
+
+            replyingTo = {
+                id: replyButton.getAttribute("data-comment-id"),
+                name: replyButton.getAttribute("data-author-name") || "this user"
+            };
+
+            var form = document.getElementById("single-post-comment-form");
+            if (form) {
+                form.setAttribute("data-parent-id", replyingTo.id);
+                var textarea = form.querySelector("textarea");
+                if (textarea) {
+                    textarea.placeholder = "Reply to " + replyingTo.name + "'s comment";
+                    textarea.focus();
+                }
+            }
+            return;
+        }
+
+        if (!reaction || !commentId) {
+            return;
+        }
+
+        try {
+            if (!viewerContext) {
+                window.location.href = "/login?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
+                return;
+            }
+
+            if (event.target.classList.contains("is-active")) {
+                var clearResult = await supabase.rpc("clear_comment_reaction", {
+                    p_comment_id: Number(commentId)
+                });
+
+                if (clearResult.error) {
+                    throw clearResult.error;
+                }
+            } else {
+                var reactionResult = await supabase.rpc("set_comment_reaction", {
+                    p_comment_id: Number(commentId),
+                    p_reaction_type: reaction
+                });
+
+                if (reactionResult.error) {
+                    throw reactionResult.error;
+                }
+            }
+
+            await loadPost();
+        } catch (error) {
+            window.HollowsideAuth.setStatus(
+                status,
+                error && error.message ? error.message : "Something went wrong while reacting to the comment.",
+                "error"
+            );
+        }
+    });
+
+    commentFormSlot.addEventListener("change", function (event) {
+        var form = event.target.closest("#single-post-comment-form");
+        if (form && event.target.hasAttribute("data-comment-image-input")) {
+            syncCommentFileName(form);
+        }
+    });
+
+    commentFormSlot.addEventListener("focusout", function (event) {
+        var form = event.target.closest("#single-post-comment-form");
+        if (!form) {
+            return;
+        }
+
+        window.setTimeout(function () {
+            if (replyingTo && !form.contains(document.activeElement)) {
+                resetReplyState();
+            }
+        }, 0);
+    });
+
     commentFormSlot.addEventListener("submit", async function (event) {
         if (event.target.id !== "single-post-comment-form") {
             return;
         }
 
         event.preventDefault();
-        var textarea = event.target.querySelector("textarea");
+        var form = event.target;
+        var textarea = form.querySelector("textarea");
+        var fileInput = form.querySelector("[data-comment-image-input]");
         var value = textarea.value.trim();
+        var imageFile = fileInput && fileInput.files ? fileInput.files[0] : null;
 
-        if (!value) {
+        if (!value && !imageFile) {
             textarea.focus();
             return;
         }
@@ -494,19 +733,31 @@ document.addEventListener("DOMContentLoaded", function () {
             var commentResponse = await supabase.rpc("create_post_comment", {
                 p_post_id: postId,
                 p_body: value,
-                p_parent_id: null
+                p_parent_id: form.getAttribute("data-parent-id") ? Number(form.getAttribute("data-parent-id")) : null
             });
 
             if (commentResponse.error) {
                 throw commentResponse.error;
             }
 
+            if (imageFile) {
+                await uploadCommentImage(commentResponse.data.id, imageFile);
+            }
+
             textarea.value = "";
+            if (fileInput) {
+                fileInput.value = "";
+            }
+            syncCommentFileName(form);
+            resetReplyState();
             await loadPost();
         } catch (error) {
+            var message = error && error.message && /size|large|payload|limit|exceed/i.test(error.message)
+                ? "Item is too large! Compress this file or choose a smaller one."
+                : (error && error.message ? error.message : "Something went wrong while posting your comment.");
             window.HollowsideAuth.setStatus(
                 status,
-                error && error.message ? error.message : "Something went wrong while posting your comment.",
+                message,
                 "error"
             );
         }
