@@ -1043,22 +1043,31 @@ select option:disabled {
 .verification-badge {
     width: 1.05rem;
     height: 1.05rem;
+    position: relative;
     border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.22);
     background: linear-gradient(180deg, #ffffff 0%, #d4d4d4 100%);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    display: inline-block;
+    padding: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+    line-height: 0;
+    vertical-align: -0.14em;
     color: #050505;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.24);
     flex: 0 0 auto;
 }
 
 .verification-badge img {
-    width: 0.82rem;
-    height: 0.82rem;
+    width: 72%;
+    height: 72%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
     display: block;
     object-fit: contain;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
 }
 
 .verification-badge[data-mode="automatic"] {
