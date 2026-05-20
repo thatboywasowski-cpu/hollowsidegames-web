@@ -39,7 +39,7 @@ for select
 to public
 using (true);
 
-drop function if exists public.get_post_comments(uuid, integer);
+drop function if exists public.get_post_comments(uuid, integer) cascade;
 drop view if exists public.content_comment_cards;
 create or replace view public.content_comment_cards as
 select
