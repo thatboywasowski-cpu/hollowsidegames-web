@@ -337,6 +337,166 @@
         );
     }
 
+    function ensureFavicon() {
+        if (document.querySelector('link[rel~="icon"]')) {
+            return;
+        }
+
+        var link = document.createElement("link");
+        link.rel = "icon";
+        link.type = "image/png";
+        link.href = "/Hollowside%20Games%20logo.png";
+        document.head.appendChild(link);
+    }
+
+    function getImageDimensions(file) {
+        return new Promise(function (resolve, reject) {
+            var image = new Image();
+            var url = URL.createObjectURL(file);
+
+            image.onload = function () {
+                URL.revokeObjectURL(url);
+                resolve({
+                    image: image,
+                    width: image.naturalWidth,
+                    height: image.naturalHeight
+                });
+            };
+
+            image.onerror = function () {
+                URL.revokeObjectURL(url);
+                reject(new Error("That image could not be loaded."));
+            };
+
+            image.src = url;
+        });
+    }
+
+    function editImageFile(file, options) {
+        var settings = options || {};
+        var shape = settings.shape === "circle" ? "circle" : "rect";
+        var outputWidth = settings.outputWidth || (shape === "circle" ? 512 : 1280);
+        var outputHeight = settings.outputHeight || (shape === "circle" ? 512 : 800);
+        var title = settings.title || "Transform your profile picture to your liking.";
+
+        return new Promise(function (resolve, reject) {
+            getImageDimensions(file).then(function (loaded) {
+                var image = loaded.image;
+                var backdrop = document.createElement("div");
+                var scale = Math.max(outputWidth / loaded.width, outputHeight / loaded.height);
+                var userScale = 1;
+                var offsetX = 0;
+                var offsetY = 0;
+                var dragging = false;
+                var lastX = 0;
+                var lastY = 0;
+
+                backdrop.className = "media-editor-backdrop";
+                backdrop.innerHTML =
+                    '<section class="media-editor-card" role="dialog" aria-modal="true">' +
+                        "<h3>" + escapeHtml(title) + "</h3>" +
+                        "<p>Drag the image to reposition it, then use the slider to resize it.</p>" +
+                        '<div class="media-editor-stage" data-shape="' + shape + '">' +
+                            '<img alt="Image preview">' +
+                        "</div>" +
+                        '<div class="media-editor-controls">' +
+                            '<label>Resize <input type="range" min="1" max="3" step="0.01" value="1"></label>' +
+                            '<div class="account-actions">' +
+                                '<button class="account-button" type="button" data-media-cancel>Cancel</button>' +
+                                '<button class="account-button primary" type="button" data-media-confirm>Confirm</button>' +
+                            "</div>" +
+                        "</div>" +
+                    "</section>";
+
+                var stage = backdrop.querySelector(".media-editor-stage");
+                var preview = backdrop.querySelector("img");
+                var range = backdrop.querySelector('input[type="range"]');
+                var cancel = backdrop.querySelector("[data-media-cancel]");
+                var confirm = backdrop.querySelector("[data-media-confirm]");
+                preview.src = image.src;
+
+                function drawPreview() {
+                    var stageRect = stage.getBoundingClientRect();
+                    var previewScale = Math.max(stageRect.width / loaded.width, stageRect.height / loaded.height) * userScale;
+                    preview.style.width = loaded.width * previewScale + "px";
+                    preview.style.height = loaded.height * previewScale + "px";
+                    preview.style.transform = "translate(calc(-50% + " + offsetX + "px), calc(-50% + " + offsetY + "px))";
+                }
+
+                function cleanup(value) {
+                    backdrop.remove();
+                    resolve(value);
+                }
+
+                stage.addEventListener("pointerdown", function (event) {
+                    dragging = true;
+                    lastX = event.clientX;
+                    lastY = event.clientY;
+                    stage.setPointerCapture(event.pointerId);
+                });
+
+                stage.addEventListener("pointermove", function (event) {
+                    if (!dragging) {
+                        return;
+                    }
+
+                    offsetX += event.clientX - lastX;
+                    offsetY += event.clientY - lastY;
+                    lastX = event.clientX;
+                    lastY = event.clientY;
+                    drawPreview();
+                });
+
+                stage.addEventListener("pointerup", function () {
+                    dragging = false;
+                });
+
+                range.addEventListener("input", function () {
+                    userScale = Number(range.value || 1);
+                    drawPreview();
+                });
+
+                cancel.addEventListener("click", function () {
+                    cleanup(null);
+                });
+
+                confirm.addEventListener("click", function () {
+                    var canvas = document.createElement("canvas");
+                    var context = canvas.getContext("2d");
+                    canvas.width = outputWidth;
+                    canvas.height = outputHeight;
+
+                    context.fillStyle = "#050505";
+                    context.fillRect(0, 0, outputWidth, outputHeight);
+
+                    var drawScale = scale * userScale;
+                    var drawWidth = loaded.width * drawScale;
+                    var drawHeight = loaded.height * drawScale;
+                    var stageRect = stage.getBoundingClientRect();
+                    var normalizedOffsetX = stageRect.width ? offsetX / stageRect.width : 0;
+                    var normalizedOffsetY = stageRect.height ? offsetY / stageRect.height : 0;
+                    var drawX = (outputWidth - drawWidth) / 2 + normalizedOffsetX * outputWidth;
+                    var drawY = (outputHeight - drawHeight) / 2 + normalizedOffsetY * outputHeight;
+
+                    context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+                    canvas.toBlob(function (blob) {
+                        if (!blob) {
+                            reject(new Error("The edited image could not be created."));
+                            return;
+                        }
+
+                        cleanup(new File([blob], file.name.replace(/\.[^.]+$/, "") + ".png", {
+                            type: "image/png"
+                        }));
+                    }, "image/png", 0.92);
+                });
+
+                document.body.appendChild(backdrop);
+                window.requestAnimationFrame(drawPreview);
+            }).catch(reject);
+        });
+    }
+
     async function touchActivity(client) {
         if (!client) {
             return;
@@ -410,8 +570,16 @@
         formatCompactCount: formatCompactCount,
         formatCountLabel: formatCountLabel,
         getVerificationBadge: getVerificationBadge,
+        ensureFavicon: ensureFavicon,
+        editImageFile: editImageFile,
         touchActivity: touchActivity,
         normalizeRedirectPath: normalizeRedirectPath,
         startOAuthSignIn: startOAuthSignIn
     };
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", ensureFavicon);
+    } else {
+        ensureFavicon();
+    }
 })();

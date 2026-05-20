@@ -1,10 +1,50 @@
 document.addEventListener("DOMContentLoaded", function () {
-    if (!window.HollowsideAuth || !window.HollowsideAuth.isConfigured()) {
+    var nav = document.querySelector(".nav-links");
+    if (!nav) {
         return;
     }
 
-    var nav = document.querySelector(".nav-links");
-    if (!nav) {
+    function ensureDownloadsNavLink() {
+        if (nav.querySelector('a[href="/downloads"]')) {
+            return;
+        }
+
+        var link = document.createElement("a");
+        link.className = "nav-link";
+        link.href = "/downloads";
+        link.textContent = "Downloads";
+
+        var aboutLink = nav.querySelector('a[href="/about"]');
+        if (aboutLink) {
+            nav.insertBefore(link, aboutLink);
+        } else {
+            nav.appendChild(link);
+        }
+    }
+
+    function syncActiveNavLink() {
+        var currentPath = window.location.pathname.replace(/\/+$/, "") || "/";
+        nav.querySelectorAll(".nav-link").forEach(function (link) {
+            var href = link.getAttribute("href");
+            var normalizedHref = href && href !== "/" ? href.replace(/\/+$/, "") : "/";
+            var active = normalizedHref === "/"
+                ? currentPath === "/"
+                : currentPath === normalizedHref || currentPath.indexOf(normalizedHref + "/") === 0;
+
+            link.classList.toggle("is-current", active);
+        });
+    }
+
+    function setGuestOnlyVisibility(isGuest) {
+        document.querySelectorAll("[data-guest-only]").forEach(function (element) {
+            element.hidden = !isGuest;
+        });
+    }
+
+    ensureDownloadsNavLink();
+    syncActiveNavLink();
+
+    if (!window.HollowsideAuth || !window.HollowsideAuth.isConfigured()) {
         return;
     }
 
@@ -69,6 +109,7 @@ document.addEventListener("DOMContentLoaded", function () {
         guestLinks.forEach(function (link) {
             link.classList.remove("is-hidden");
         });
+        setGuestOnlyVisibility(true);
         removeAccountShell();
     }
 
@@ -101,6 +142,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         var allowedPrefixes = [
             "/news",
+            "/downloads",
             "/account",
             "/login",
             "/signup",
@@ -153,6 +195,7 @@ document.addEventListener("DOMContentLoaded", function () {
         guestLinks.forEach(function (link) {
             link.classList.add("is-hidden");
         });
+        setGuestOnlyVisibility(false);
 
         removeAccountShell();
         enforceRestrictedAccess(accountContext);
@@ -188,6 +231,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!banned) {
             menuLinks.unshift(getMenuLink("View full profile", publicProfileHref, "public"));
             menuLinks.splice(1, 0, getMenuLink("Browse members", "/directory", "search"));
+            menuLinks.splice(2, 0, getMenuLink("Downloads", "/downloads", accountContext && accountContext.can_publish_downloads ? "upload" : "browse"));
         }
 
         if (canOpenModeration) {

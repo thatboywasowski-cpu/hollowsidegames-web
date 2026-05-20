@@ -357,12 +357,32 @@ document.addEventListener("DOMContentLoaded", function () {
 
         files.forEach(function (file, index) {
             uploads.push((async function () {
-                var extension = (file.name.split(".").pop() || "bin").toLowerCase();
+                var uploadFile = file;
+                if (file.type.indexOf("image/") === 0) {
+                    if (file.size > 20 * 1024 * 1024) {
+                        throw new Error("Please keep post image uploads under 20 MB.");
+                    }
+
+                    var editedFile = await window.HollowsideAuth.editImageFile(file, {
+                        shape: "rect",
+                        outputWidth: 1280,
+                        outputHeight: 800,
+                        title: "Transform your post image to your liking."
+                    });
+
+                    if (!editedFile) {
+                        return;
+                    }
+
+                    uploadFile = editedFile;
+                }
+
+                var extension = uploadFile.type.indexOf("image/") === 0 ? "png" : (uploadFile.name.split(".").pop() || "bin").toLowerCase();
                 var path = viewerContext.id + "/posts/" + postId + "/" + Date.now() + "-" + index + "." + extension;
-                var mediaType = file.type.indexOf("video/") === 0 ? "video" : "image";
+                var mediaType = uploadFile.type.indexOf("video/") === 0 ? "video" : "image";
                 var uploadResult = await supabase.storage
                     .from("post-media")
-                    .upload(path, file, {
+                    .upload(path, uploadFile, {
                         upsert: false,
                         cacheControl: "3600"
                     });

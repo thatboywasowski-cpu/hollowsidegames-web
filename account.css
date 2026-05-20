@@ -397,10 +397,16 @@
     padding: 0.95rem 1rem;
     border-radius: var(--radius-sm);
     border: 1px solid var(--line);
-    background: rgba(255, 255, 255, 0.04);
+    background: #080808;
     color: var(--text);
     outline: none;
     font: inherit;
+}
+
+.account-form .field select option,
+.permission-tile select option {
+    background: #080808;
+    color: var(--text);
 }
 
 .account-form .field select:focus,

@@ -525,19 +525,32 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            if (file.size > 5 * 1024 * 1024) {
-                window.HollowsideAuth.setStatus(status, "Please keep avatar uploads under 5 MB.", "error");
+            if (file.size > 20 * 1024 * 1024) {
+                window.HollowsideAuth.setStatus(status, "Please keep profile picture uploads under 20 MB.", "error");
                 return;
             }
 
-            var extension = (file.name.split(".").pop() || "png").toLowerCase();
+            var editedFile = await window.HollowsideAuth.editImageFile(file, {
+                shape: "circle",
+                outputWidth: 512,
+                outputHeight: 512,
+                title: "Transform your profile picture to your liking."
+            });
+
+            if (!editedFile) {
+                avatarInput.value = "";
+                return;
+            }
+
+            var uploadFile = editedFile;
+            var extension = "png";
             var filePath = currentUser.id + "/avatar." + extension;
 
             try {
                 window.HollowsideAuth.setStatus(status, "Uploading your new profile picture...", "info");
                 var uploadResult = await supabase.storage
                     .from("avatars")
-                    .upload(filePath, file, {
+                    .upload(filePath, uploadFile, {
                         upsert: true,
                         cacheControl: "3600"
                     });
