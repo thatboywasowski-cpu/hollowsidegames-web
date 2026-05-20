@@ -1054,11 +1054,11 @@ select option:disabled {
     flex: 0 0 auto;
 }
 
-.verification-badge svg {
+.verification-badge img {
     width: 0.82rem;
     height: 0.82rem;
-    fill: currentColor;
     display: block;
+    object-fit: contain;
 }
 
 .verification-badge[data-mode="automatic"] {

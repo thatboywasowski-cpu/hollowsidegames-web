@@ -330,9 +330,7 @@
 
         return (
             '<span class="verification-badge" data-mode="' + mode + '" title="' + label + '" aria-label="' + label + '">' +
-                '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
-                    '<path d="M9.55 16.2 5.7 12.35l1.4-1.4 2.45 2.45 7.35-7.35 1.4 1.4z"></path>' +
-                "</svg>" +
+                '<img src="/Hollowside%20Games%20website%20verification.png" alt="">' +
             "</span>"
         );
     }
@@ -391,6 +389,7 @@
                 var dragging = false;
                 var lastX = 0;
                 var lastY = 0;
+                var lastStageRect = null;
 
                 backdrop.className = "media-editor-backdrop";
                 backdrop.innerHTML =
@@ -418,9 +417,16 @@
 
                 function drawPreview() {
                     var stageRect = stage.getBoundingClientRect();
+                    lastStageRect = stageRect;
                     var previewScale = Math.max(stageRect.width / loaded.width, stageRect.height / loaded.height) * userScale;
-                    preview.style.width = loaded.width * previewScale + "px";
-                    preview.style.height = loaded.height * previewScale + "px";
+                    var previewWidth = loaded.width * previewScale;
+                    var previewHeight = loaded.height * previewScale;
+                    var maxOffsetX = Math.max(0, (previewWidth - stageRect.width) / 2);
+                    var maxOffsetY = Math.max(0, (previewHeight - stageRect.height) / 2);
+                    offsetX = Math.max(-maxOffsetX, Math.min(maxOffsetX, offsetX));
+                    offsetY = Math.max(-maxOffsetY, Math.min(maxOffsetY, offsetY));
+                    preview.style.width = previewWidth + "px";
+                    preview.style.height = previewHeight + "px";
                     preview.style.transform = "translate(calc(-50% + " + offsetX + "px), calc(-50% + " + offsetY + "px))";
                 }
 
@@ -474,11 +480,15 @@
                     var drawScale = scale * userScale;
                     var drawWidth = loaded.width * drawScale;
                     var drawHeight = loaded.height * drawScale;
-                    var stageRect = stage.getBoundingClientRect();
+                    var stageRect = lastStageRect || stage.getBoundingClientRect();
+                    var maxCanvasOffsetX = Math.max(0, (drawWidth - outputWidth) / 2);
+                    var maxCanvasOffsetY = Math.max(0, (drawHeight - outputHeight) / 2);
                     var normalizedOffsetX = stageRect.width ? offsetX / stageRect.width : 0;
                     var normalizedOffsetY = stageRect.height ? offsetY / stageRect.height : 0;
-                    var drawX = (outputWidth - drawWidth) / 2 + normalizedOffsetX * outputWidth;
-                    var drawY = (outputHeight - drawHeight) / 2 + normalizedOffsetY * outputHeight;
+                    var canvasOffsetX = Math.max(-maxCanvasOffsetX, Math.min(maxCanvasOffsetX, normalizedOffsetX * outputWidth));
+                    var canvasOffsetY = Math.max(-maxCanvasOffsetY, Math.min(maxCanvasOffsetY, normalizedOffsetY * outputHeight));
+                    var drawX = (outputWidth - drawWidth) / 2 + canvasOffsetX;
+                    var drawY = (outputHeight - drawHeight) / 2 + canvasOffsetY;
 
                     context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
                     canvas.toBlob(function (blob) {
