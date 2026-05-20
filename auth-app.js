@@ -320,6 +320,88 @@
         return formatCompactCount(value) + " " + label;
     }
 
+    var roleEmulationKey = "hollowside-role-emulation";
+    var emulationRoles = [
+        { key: "owner", label: "Owner" },
+        { key: "co_owner", label: "Co-Owner" },
+        { key: "developer", label: "Developer" },
+        { key: "head_moderator", label: "Head Moderator" },
+        { key: "moderator", label: "Moderator" },
+        { key: "trusted_member", label: "Trusted Member" },
+        { key: "member", label: "Member" }
+    ];
+
+    function getRoleByKey(roleKey) {
+        return emulationRoles.find(function (role) {
+            return role.key === roleKey;
+        }) || null;
+    }
+
+    function getRoleEmulation() {
+        try {
+            return getRoleByKey(window.localStorage.getItem(roleEmulationKey) || "");
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function setRoleEmulation(roleKey) {
+        try {
+            if (roleKey && getRoleByKey(roleKey)) {
+                window.localStorage.setItem(roleEmulationKey, roleKey);
+            } else {
+                window.localStorage.removeItem(roleEmulationKey);
+            }
+        } catch (error) {
+            return;
+        }
+    }
+
+    function applyRoleEmulation(accountContext, profile) {
+        var emulatedRole = getRoleEmulation();
+        if (!emulatedRole) {
+            return accountContext;
+        }
+
+        var context = Object.assign({}, accountContext || {});
+        var roleKey = emulatedRole.key;
+        var isOwner = roleKey === "owner";
+        var isCoOwner = roleKey === "co_owner";
+        var isDeveloper = roleKey === "developer";
+        var isHeadModerator = roleKey === "head_moderator";
+        var isModerator = roleKey === "moderator";
+        var isTrusted = roleKey === "trusted_member";
+        var canModerateContent = isOwner || isCoOwner || isHeadModerator || isModerator;
+
+        context.role_label = emulatedRole.label;
+        context.effective_role_key = roleKey;
+        context.can_manage_roles = isOwner || isCoOwner;
+        context.can_manage_role_permissions = isOwner || isCoOwner;
+        context.can_manage_account_permissions = isOwner || isCoOwner;
+        context.can_verify_accounts = isOwner || isCoOwner;
+        context.can_publish_news = isOwner || isCoOwner || isDeveloper;
+        context.can_publish_personal_posts = roleKey !== "member";
+        context.can_comment_posts = roleKey !== "member" || isTrusted;
+        context.can_manage_reports = canModerateContent;
+        context.can_issue_warnings = canModerateContent;
+        context.can_suspend_accounts = canModerateContent;
+        context.can_ban_accounts = isOwner || isCoOwner || isHeadModerator;
+        context.can_access_moderation = canModerateContent;
+        context.can_moderate_content = canModerateContent;
+        context.can_moderate_news = isOwner || isCoOwner;
+        context.can_publish_downloads = isOwner || isCoOwner || isDeveloper;
+        context.is_role_emulated = true;
+        context.emulated_role_key = roleKey;
+        context.emulated_role_label = emulatedRole.label;
+
+        if (profile) {
+            profile.role_label = emulatedRole.label;
+            profile.role_key = roleKey;
+        }
+
+        return context;
+    }
+
     function getVerificationBadge(record, ariaLabel) {
         if (!record || !record.is_verified) {
             return "";
@@ -622,6 +704,10 @@
         escapeHtml: escapeHtml,
         formatCompactCount: formatCompactCount,
         formatCountLabel: formatCountLabel,
+        getRoleEmulation: getRoleEmulation,
+        setRoleEmulation: setRoleEmulation,
+        applyRoleEmulation: applyRoleEmulation,
+        emulationRoles: emulationRoles,
         getVerificationBadge: getVerificationBadge,
         ensureFavicon: ensureFavicon,
         editImageFile: editImageFile,

@@ -287,8 +287,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 throw roleContextResponse.error;
             }
 
-            var accountContext = accountContextResponse.data && accountContextResponse.data[0];
-            var roleContext = roleContextResponse.data && roleContextResponse.data[0];
+            var accountContext = accountContextResponse.data && accountContextResponse.data[0]
+                ? window.HollowsideAuth.applyRoleEmulation(accountContextResponse.data[0], null)
+                : null;
+            var roleContext = window.HollowsideAuth.getRoleEmulation()
+                ? {}
+                : (roleContextResponse.data && roleContextResponse.data[0]);
 
             adminContext = Object.assign({}, roleContext || {}, accountContext || {});
             if (!adminContext || (!adminContext.can_manage_roles && !adminContext.can_manage_role_permissions && !adminContext.can_manage_account_permissions && !adminContext.can_verify_accounts)) {

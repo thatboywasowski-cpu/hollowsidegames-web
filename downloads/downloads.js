@@ -244,7 +244,9 @@ document.addEventListener("DOMContentLoaded", function () {
     (async function initialize() {
         try {
             var contextResponse = await supabase.rpc("get_my_account_context");
-            viewerContext = !contextResponse.error && contextResponse.data && contextResponse.data[0] ? contextResponse.data[0] : null;
+            viewerContext = !contextResponse.error && contextResponse.data && contextResponse.data[0]
+                ? window.HollowsideAuth.applyRoleEmulation(contextResponse.data[0], null)
+                : null;
             var canUpload = !!(viewerContext && viewerContext.can_publish_downloads);
             uploader.hidden = !canUpload;
             uploadInfo.hidden = !canUpload;

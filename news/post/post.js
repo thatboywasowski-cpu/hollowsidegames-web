@@ -56,6 +56,29 @@ document.addEventListener("DOMContentLoaded", function () {
         );
     }
 
+    function canDeleteNewsPost(post) {
+        return !!(
+            viewerContext &&
+            post &&
+            (
+                (viewerContext.id === post.author_id && viewerContext.can_publish_news) ||
+                viewerContext.can_moderate_news
+            )
+        );
+    }
+
+    function canDeleteComment(comment) {
+        return !!(
+            viewerContext &&
+            comment &&
+            (
+                viewerContext.id === comment.author_id ||
+                (postCard && viewerContext.id === postCard.author_id) ||
+                viewerContext.can_moderate_content
+            )
+        );
+    }
+
     function renderAuthorMeta(post) {
         var badge = window.HollowsideAuth.getVerificationBadge({
             is_verified: post.author_is_verified,
@@ -149,6 +172,9 @@ document.addEventListener("DOMContentLoaded", function () {
         var replyButton = viewerContext && viewerContext.can_comment_posts
             ? '<button class="comment-action" type="button" data-comment-reply data-comment-id="' + escapeHtml(comment.id) + '" data-author-name="' + escapeHtml(comment.author_display_name) + '">Reply</button>'
             : "";
+        var deleteButton = canDeleteComment(comment)
+            ? '<button class="comment-delete-button" type="button" data-comment-delete="' + escapeHtml(comment.id) + '" aria-label="Delete comment"><img src="/trash.png" alt=""></button>'
+            : "";
         var reactionButtons = viewerContext
             ? '<button class="comment-action' + (comment.viewer_reaction === "like" ? " is-active" : "") + '" type="button" data-comment-reaction="like" data-comment-id="' + escapeHtml(comment.id) + '">Like - ' + window.HollowsideAuth.formatCountLabel(comment.like_count, "Like", "Likes") + '</button>' +
               '<button class="comment-action' + (comment.viewer_reaction === "dislike" ? " is-active" : "") + '" type="button" data-comment-reaction="dislike" data-comment-id="' + escapeHtml(comment.id) + '">Dislike - ' + window.HollowsideAuth.formatCountLabel(comment.dislike_count, "Dislike", "Dislikes") + '</button>'
@@ -165,6 +191,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     ? '<p class="comment-hidden-copy">This comment will no longer be shown to you.</p>'
                     : '<p>' + escapeHtml(comment.body || "") + '</p>' + renderCommentMedia(comment)) +
                 '<div class="comment-actions">' + reactionButtons + replyButton + '</div>' +
+                deleteButton +
             '</article>' +
             (comment.replies || []).map(function (reply) {
                 return renderComment(reply, depth + 1);
@@ -302,7 +329,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     function renderOwnerTools(post) {
-        if (!canManageNewsPost(post)) {
+        if (!canManageNewsPost(post) && !canDeleteNewsPost(post)) {
             ownerTools.innerHTML = "";
             return;
         }
@@ -310,10 +337,10 @@ document.addEventListener("DOMContentLoaded", function () {
         ownerTools.innerHTML =
             '<div class="post-owner-tools">' +
                 '<div class="post-owner-actions">' +
-                    '<button class="post-action" type="button" data-news-edit-toggle>Edit Post</button>' +
-                    '<button class="post-action is-danger" type="button" data-news-delete>Delete Post</button>' +
+                    (canManageNewsPost(post) ? '<button class="post-action" type="button" data-news-edit-toggle>Edit Post</button>' : '') +
+                    (canDeleteNewsPost(post) ? '<button class="post-action is-danger" type="button" data-news-delete>Delete Post</button>' : '') +
                 "</div>" +
-                '<form class="post-edit-form" id="full-news-edit-form" hidden>' +
+                (canManageNewsPost(post) ? '<form class="post-edit-form" id="full-news-edit-form" hidden>' +
                     '<div class="post-edit-grid">' +
                         '<div>' +
                             '<label for="full-edit-subtitle">Subtitle</label>' +
@@ -336,7 +363,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         '<button class="account-button primary" type="submit">Save Changes</button>' +
                         '<button class="account-button" type="button" data-news-edit-cancel>Cancel</button>' +
                     "</div>" +
-                "</form>" +
+                "</form>" : '') +
             '</div>';
     }
 
@@ -378,7 +405,9 @@ document.addEventListener("DOMContentLoaded", function () {
         try {
             try {
                 var contextResponse = await supabase.rpc("get_my_account_context");
-                viewerContext = !contextResponse.error && contextResponse.data && contextResponse.data[0] ? contextResponse.data[0] : null;
+                viewerContext = !contextResponse.error && contextResponse.data && contextResponse.data[0]
+                    ? window.HollowsideAuth.applyRoleEmulation(contextResponse.data[0], null)
+                    : null;
             } catch (contextError) {
                 viewerContext = null;
             }
@@ -624,6 +653,7 @@ document.addEventListener("DOMContentLoaded", function () {
         var reaction = event.target.getAttribute("data-comment-reaction");
         var commentId = event.target.getAttribute("data-comment-id");
         var replyButton = event.target.closest("[data-comment-reply]");
+        var deleteCommentId = event.target.closest("[data-comment-delete]");
 
         if (imageButton) {
             window.HollowsideAuth.openImageViewer(imageButton.getAttribute("data-open-image"), "Comment attachment");
@@ -649,6 +679,31 @@ document.addEventListener("DOMContentLoaded", function () {
                     textarea.placeholder = "Reply to " + replyingTo.name + "'s comment";
                     textarea.focus();
                 }
+            }
+            return;
+        }
+
+        if (deleteCommentId) {
+            if (!window.confirm("Delete this comment? This also removes its replies and attached images.")) {
+                return;
+            }
+
+            try {
+                var deleteResult = await supabase.rpc("delete_post_comment", {
+                    p_comment_id: Number(deleteCommentId.getAttribute("data-comment-delete"))
+                });
+
+                if (deleteResult.error) {
+                    throw deleteResult.error;
+                }
+
+                await loadPost();
+            } catch (error) {
+                window.HollowsideAuth.setStatus(
+                    status,
+                    error && error.message ? error.message : "Something went wrong while deleting the comment.",
+                    "error"
+                );
             }
             return;
         }

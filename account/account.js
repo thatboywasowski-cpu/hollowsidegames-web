@@ -468,7 +468,7 @@ document.addEventListener("DOMContentLoaded", function () {
         try {
             var contextResponse = await supabase.rpc("get_my_account_context");
             if (contextResponse.data && contextResponse.data[0]) {
-                accountContext = contextResponse.data[0];
+                accountContext = window.HollowsideAuth.applyRoleEmulation(contextResponse.data[0], null);
             }
         } catch (error) {
             accountContext = null;

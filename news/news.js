@@ -65,6 +65,17 @@ document.addEventListener("DOMContentLoaded", function () {
         );
     }
 
+    function canDeleteNewsPost(post) {
+        return !!(
+            viewerContext &&
+            post &&
+            (
+                (viewerContext.id === post.author_id && viewerContext.can_publish_news) ||
+                viewerContext.can_moderate_news
+            )
+        );
+    }
+
     function buildAuthorLine(post) {
         var badge = window.HollowsideAuth.getVerificationBadge({
             is_verified: post.author_is_verified,
@@ -164,17 +175,17 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function renderOwnerTools(post) {
-        if (!canManageNewsPost(post)) {
+        if (!canManageNewsPost(post) && !canDeleteNewsPost(post)) {
             return "";
         }
 
         return (
             '<div class="post-owner-tools">' +
                 '<div class="post-owner-actions">' +
-                    '<button class="post-action" type="button" data-news-edit-toggle data-post-id="' + escapeHtml(post.id) + '">Edit Post</button>' +
-                    '<button class="post-action is-danger" type="button" data-news-delete data-post-id="' + escapeHtml(post.id) + '">Delete Post</button>' +
+                    (canManageNewsPost(post) ? '<button class="post-action" type="button" data-news-edit-toggle data-post-id="' + escapeHtml(post.id) + '">Edit Post</button>' : '') +
+                    (canDeleteNewsPost(post) ? '<button class="post-action is-danger" type="button" data-news-delete data-post-id="' + escapeHtml(post.id) + '">Delete Post</button>' : '') +
                 "</div>" +
-                '<form class="post-edit-form" data-news-edit-form data-post-id="' + escapeHtml(post.id) + '" hidden>' +
+                (canManageNewsPost(post) ? '<form class="post-edit-form" data-news-edit-form data-post-id="' + escapeHtml(post.id) + '" hidden>' +
                     '<div class="post-edit-grid">' +
                         '<div>' +
                             '<label for="edit-subtitle-' + escapeHtml(post.id) + '">Subtitle</label>' +
@@ -197,7 +208,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         '<button class="account-button primary" type="submit">Save Changes</button>' +
                         '<button class="account-button" type="button" data-news-edit-cancel data-post-id="' + escapeHtml(post.id) + '">Cancel</button>' +
                     "</div>" +
-                "</form>" +
+                "</form>" : '') +
             "</div>"
         );
     }
@@ -516,7 +527,9 @@ document.addEventListener("DOMContentLoaded", function () {
     async function initialize() {
         try {
             var contextResponse = await supabase.rpc("get_my_account_context");
-            viewerContext = !contextResponse.error && contextResponse.data && contextResponse.data[0] ? contextResponse.data[0] : null;
+            viewerContext = !contextResponse.error && contextResponse.data && contextResponse.data[0]
+                ? window.HollowsideAuth.applyRoleEmulation(contextResponse.data[0], null)
+                : null;
 
             if (viewerContext && viewerContext.can_publish_news) {
                 composerCard.hidden = false;

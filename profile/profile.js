@@ -339,7 +339,31 @@ document.addEventListener("DOMContentLoaded", function () {
         return roots;
     }
 
-    function renderComment(comment, depth) {
+    function canDeleteProfilePost(post) {
+        return !!(
+            viewerContext &&
+            post &&
+            (
+                (viewerContext.id === post.author_id && viewerContext.can_publish_personal_posts) ||
+                viewerContext.can_moderate_content
+            )
+        );
+    }
+
+    function canDeleteComment(comment, post) {
+        return !!(
+            viewerContext &&
+            comment &&
+            post &&
+            (
+                viewerContext.id === comment.author_id ||
+                viewerContext.id === post.author_id ||
+                viewerContext.can_moderate_content
+            )
+        );
+    }
+
+    function renderComment(comment, depth, post) {
         var badge = window.HollowsideAuth.getVerificationBadge({
             is_verified: comment.author_is_verified,
             verification_mode: comment.author_verification_mode
@@ -347,6 +371,9 @@ document.addEventListener("DOMContentLoaded", function () {
         var hidden = comment.viewer_reaction === "dislike";
         var replyButton = viewerContext && viewerContext.can_comment_posts
             ? '<button class="comment-action" type="button" data-comment-reply data-comment-id="' + escapeHtml(comment.id) + '" data-author-name="' + escapeHtml(comment.author_display_name) + '">Reply</button>'
+            : "";
+        var deleteButton = canDeleteComment(comment, post)
+            ? '<button class="comment-delete-button" type="button" data-comment-delete="' + escapeHtml(comment.id) + '" aria-label="Delete comment"><img src="/trash.png" alt=""></button>'
             : "";
         var reactionButtons = viewerContext
             ? '<button class="comment-action' + (comment.viewer_reaction === "like" ? " is-active" : "") + '" type="button" data-comment-reaction="like" data-comment-id="' + escapeHtml(comment.id) + '">Like - ' + window.HollowsideAuth.formatCountLabel(comment.like_count, "Like", "Likes") + '</button>' +
@@ -364,14 +391,15 @@ document.addEventListener("DOMContentLoaded", function () {
                     ? '<p class="comment-hidden-copy">This comment will no longer be shown to you.</p>'
                     : '<p>' + escapeHtml(comment.body || "") + '</p>' + renderCommentMedia(comment)) +
                 '<div class="comment-actions">' + reactionButtons + replyButton + '</div>' +
+                deleteButton +
             '</article>' +
             (comment.replies || []).map(function (reply) {
-                return renderComment(reply, depth + 1);
+                return renderComment(reply, depth + 1, post);
             }).join("")
         );
     }
 
-    function renderComments(items) {
+    function renderComments(items, post) {
         if (!items.length) {
             return '<p class="post-empty">No comments yet.</p>';
         }
@@ -379,7 +407,7 @@ document.addEventListener("DOMContentLoaded", function () {
         return (
             '<div class="comment-list">' +
                 buildCommentTree(items).map(function (comment) {
-                    return renderComment(comment, 0);
+                    return renderComment(comment, 0, post);
                 }).join("") +
             "</div>"
         );
@@ -433,17 +461,17 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function renderOwnerTools(post) {
-        if (!canManageProfilePost(post)) {
+        if (!canManageProfilePost(post) && !canDeleteProfilePost(post)) {
             return "";
         }
 
         return (
             '<div class="post-owner-tools">' +
                 '<div class="post-owner-actions">' +
-                    '<button class="post-action" type="button" data-profile-edit-toggle data-post-id="' + escapeHtml(post.id) + '">Edit Post</button>' +
-                    '<button class="post-action is-danger" type="button" data-profile-delete data-post-id="' + escapeHtml(post.id) + '">Delete Post</button>' +
+                    (canManageProfilePost(post) ? '<button class="post-action" type="button" data-profile-edit-toggle data-post-id="' + escapeHtml(post.id) + '">Edit Post</button>' : '') +
+                    (canDeleteProfilePost(post) ? '<button class="post-action is-danger" type="button" data-profile-delete data-post-id="' + escapeHtml(post.id) + '">Delete Post</button>' : '') +
                 "</div>" +
-                '<form class="post-edit-form" data-profile-edit-form data-post-id="' + escapeHtml(post.id) + '" hidden>' +
+                (canManageProfilePost(post) ? '<form class="post-edit-form" data-profile-edit-form data-post-id="' + escapeHtml(post.id) + '" hidden>' +
                     '<div>' +
                         '<label for="profile-edit-body-' + escapeHtml(post.id) + '">Edit Post</label>' +
                         '<textarea id="profile-edit-body-' + escapeHtml(post.id) + '" name="body" maxlength="5000">' + escapeHtml(post.body || "") + '</textarea>' +
@@ -452,7 +480,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         '<button class="account-button primary" type="submit">Save Changes</button>' +
                         '<button class="account-button" type="button" data-profile-edit-cancel data-post-id="' + escapeHtml(post.id) + '">Cancel</button>' +
                     "</div>" +
-                "</form>" +
+                "</form>" : '') +
             "</div>"
         );
     }
@@ -625,7 +653,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                 : '') +
                         '</div>' +
                         renderOwnerTools(post) +
-                        renderComments(commentsResponse.data || []) +
+                        renderComments(commentsResponse.data || [], post) +
                         (viewerContext && viewerContext.can_comment_posts
                             ? renderCommentForm(post.id)
                             : (!viewerContext
@@ -655,6 +683,7 @@ document.addEventListener("DOMContentLoaded", function () {
         var commentReaction = event.target.getAttribute("data-comment-reaction");
         var commentId = event.target.getAttribute("data-comment-id");
         var replyButton = event.target.closest("[data-comment-reply]");
+        var deleteCommentButton = event.target.closest("[data-comment-delete]");
         var reaction = event.target.getAttribute("data-reaction");
         var postId = event.target.getAttribute("data-post-id");
         var editToggle = event.target.hasAttribute("data-profile-edit-toggle");
@@ -694,6 +723,31 @@ document.addEventListener("DOMContentLoaded", function () {
                     textarea.placeholder = "Reply to " + replyingByPost[replyPostId].name + "'s comment";
                     textarea.focus();
                 }
+            }
+            return;
+        }
+
+        if (deleteCommentButton) {
+            if (!window.confirm("Delete this comment? This also removes its replies and attached images.")) {
+                return;
+            }
+
+            try {
+                var deleteCommentResult = await supabase.rpc("delete_post_comment", {
+                    p_comment_id: Number(deleteCommentButton.getAttribute("data-comment-delete"))
+                });
+
+                if (deleteCommentResult.error) {
+                    throw deleteCommentResult.error;
+                }
+
+                loadProfilePosts();
+            } catch (error) {
+                window.HollowsideAuth.setStatus(
+                    status,
+                    error && error.message ? error.message : "Something went wrong while deleting the comment.",
+                    "error"
+                );
             }
             return;
         }
@@ -979,7 +1033,9 @@ document.addEventListener("DOMContentLoaded", function () {
             window.HollowsideAuth.setStatus(status, "Loading profile...", "info");
 
             var viewerContextResponse = await supabase.rpc("get_my_account_context");
-            viewerContext = viewerContextResponse.data && viewerContextResponse.data[0] ? viewerContextResponse.data[0] : null;
+            viewerContext = viewerContextResponse.data && viewerContextResponse.data[0]
+                ? window.HollowsideAuth.applyRoleEmulation(viewerContextResponse.data[0], null)
+                : null;
 
             var response = await supabase.rpc("get_profile_view", {
                 p_account_id: accountId
@@ -993,6 +1049,10 @@ document.addEventListener("DOMContentLoaded", function () {
             if (!profileCard) {
                 window.HollowsideAuth.setStatus(status, "That profile is unavailable right now. If one of you blocked the other, it will stay hidden here.", "error");
                 return;
+            }
+            if (viewerContext && viewerContext.account_id === profileCard.account_id && viewerContext.is_role_emulated) {
+                profileCard.role_label = viewerContext.role_label;
+                profileCard.role_key = viewerContext.effective_role_key;
             }
 
             document.title = profileCard.display_name + " | Hollowside Games";

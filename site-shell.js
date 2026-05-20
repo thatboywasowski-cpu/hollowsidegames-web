@@ -111,6 +111,10 @@ document.addEventListener("DOMContentLoaded", function () {
         });
         setGuestOnlyVisibility(true);
         removeAccountShell();
+        var emulationBar = document.querySelector("[data-disable-role-emulation-bar]");
+        if (emulationBar) {
+            emulationBar.remove();
+        }
     }
 
     function closeMenu() {
@@ -189,9 +193,70 @@ document.addEventListener("DOMContentLoaded", function () {
         signOut.addEventListener("click", function () {
             handleSignOut();
         });
+
+        menu.addEventListener("click", function (event) {
+            var emulationButton = event.target.closest("[data-role-emulation]");
+            var disableButton = event.target.closest("[data-disable-role-emulation]");
+
+            if (emulationButton) {
+                window.HollowsideAuth.setRoleEmulation(emulationButton.getAttribute("data-role-emulation"));
+                window.location.reload();
+                return;
+            }
+
+            if (disableButton) {
+                window.HollowsideAuth.setRoleEmulation("");
+                window.location.reload();
+            }
+        });
     }
 
-    async function renderUserState(user, profile, accountContext) {
+    function renderRoleEmulationPanel(canUseRoleEmulation) {
+        var active = window.HollowsideAuth.getRoleEmulation();
+        if (!canUseRoleEmulation && !active) {
+            return "";
+        }
+
+        return (
+            '<div class="nav-role-emulation">' +
+                '<span class="nav-menu-kicker">Role Emulation</span>' +
+                '<div class="nav-role-grid">' +
+                    window.HollowsideAuth.emulationRoles.map(function (role) {
+                        return (
+                            '<button class="nav-role-option' + (active && active.key === role.key ? " is-active" : "") + '" type="button" data-role-emulation="' + role.key + '">' +
+                                window.HollowsideAuth.escapeHtml(role.label) +
+                            "</button>"
+                        );
+                    }).join("") +
+                "</div>" +
+            "</div>"
+        );
+    }
+
+    function renderEmulationDisableButton(accountContext) {
+        if (!accountContext || !accountContext.is_role_emulated) {
+            var existing = document.querySelector("[data-disable-role-emulation-bar]");
+            if (existing) {
+                existing.remove();
+            }
+            return;
+        }
+
+        var bar = document.querySelector("[data-disable-role-emulation-bar]");
+        if (!bar) {
+            bar = document.createElement("div");
+            bar.className = "role-emulation-bar";
+            bar.setAttribute("data-disable-role-emulation-bar", "");
+            bar.innerHTML = '<button class="account-button primary" type="button" data-disable-role-emulation>Disable Role Emulation</button>';
+            document.body.appendChild(bar);
+            bar.querySelector("button").addEventListener("click", function () {
+                window.HollowsideAuth.setRoleEmulation("");
+                window.location.reload();
+            });
+        }
+    }
+
+    async function renderUserState(user, profile, accountContext, realAccountContext) {
         guestLinks.forEach(function (link) {
             link.classList.add("is-hidden");
         });
@@ -199,11 +264,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
         removeAccountShell();
         enforceRestrictedAccess(accountContext);
+        renderEmulationDisableButton(accountContext);
 
         var canOpenRoleTools = accountContext && (
             accountContext.can_manage_roles ||
             accountContext.can_manage_role_permissions ||
             accountContext.can_manage_account_permissions
+        );
+        var canUseRoleEmulation = realAccountContext && (
+            realAccountContext.can_manage_roles ||
+            realAccountContext.can_manage_role_permissions ||
+            realAccountContext.effective_role_key === "owner" ||
+            realAccountContext.effective_role_key === "co_owner"
         );
         var canOpenModeration = accountContext && accountContext.can_access_moderation;
         var publicProfileHref = profile && profile.account_id
@@ -260,6 +332,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 "</div>" +
                 '<div class="nav-menu-actions">' +
                     menuLinks.join("") +
+                    renderRoleEmulationPanel(canUseRoleEmulation) +
                     '<button class="nav-menu-button" type="button" data-nav-signout>' +
                         "<span>Sign out</span>" +
                         '<span class="nav-menu-kicker">leave</span>' +
@@ -282,6 +355,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         var profile = null;
         var accountContext = null;
+        var realAccountContext = null;
 
         try {
             var ensured = await window.HollowsideAuth.ensureProfile(supabase, user);
@@ -295,7 +369,8 @@ document.addEventListener("DOMContentLoaded", function () {
         try {
             var contextResponse = await supabase.rpc("get_my_account_context");
             if (contextResponse.data && contextResponse.data[0]) {
-                accountContext = contextResponse.data[0];
+                realAccountContext = contextResponse.data[0];
+                accountContext = window.HollowsideAuth.applyRoleEmulation(realAccountContext, profile);
             }
         } catch (error) {
             accountContext = null;
@@ -306,7 +381,7 @@ document.addEventListener("DOMContentLoaded", function () {
             window.HollowsideAuth.touchActivity(supabase);
         }
 
-        await renderUserState(user, profile, accountContext);
+        await renderUserState(user, profile, accountContext, realAccountContext);
     }
 
     document.addEventListener("click", function (event) {
