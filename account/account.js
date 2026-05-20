@@ -520,33 +520,33 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         (async function uploadAvatar(file) {
-            if (!file.type || file.type.indexOf("image/") !== 0) {
-                window.HollowsideAuth.setStatus(status, "Please choose an image file for the profile picture.", "error");
-                return;
-            }
-
-            if (file.size > 20 * 1024 * 1024) {
-                window.HollowsideAuth.setStatus(status, "Please keep profile picture uploads under 20 MB.", "error");
-                return;
-            }
-
-            var editedFile = await window.HollowsideAuth.editImageFile(file, {
-                shape: "circle",
-                outputWidth: 512,
-                outputHeight: 512,
-                title: "Transform your profile picture to your liking."
-            });
-
-            if (!editedFile) {
-                avatarInput.value = "";
-                return;
-            }
-
-            var uploadFile = editedFile;
-            var extension = "png";
-            var filePath = currentUser.id + "/avatar." + extension;
-
             try {
+                if (!file.type || file.type.indexOf("image/") !== 0) {
+                    window.HollowsideAuth.setStatus(status, "Please choose an image file for the profile picture.", "error");
+                    return;
+                }
+
+                if (file.size > 20 * 1024 * 1024) {
+                    window.HollowsideAuth.setStatus(status, "Item is too large! Compress this file or choose a smaller one.", "error");
+                    return;
+                }
+
+                var editedFile = await window.HollowsideAuth.editImageFile(file, {
+                    shape: "circle",
+                    outputWidth: 512,
+                    outputHeight: 512,
+                    title: "Transform your profile picture to your liking."
+                });
+
+                if (!editedFile) {
+                    avatarInput.value = "";
+                    return;
+                }
+
+                var uploadFile = editedFile;
+                var extension = "png";
+                var filePath = currentUser.id + "/avatar." + extension;
+
                 window.HollowsideAuth.setStatus(status, "Uploading your new profile picture...", "info");
                 var uploadResult = await supabase.storage
                     .from("avatars")
@@ -584,9 +584,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 emitProfileUpdate(currentProfile);
                 window.HollowsideAuth.setStatus(status, "Profile picture updated.", "success");
             } catch (error) {
+                var message = error && error.message && /size|large|payload|limit|exceed/i.test(error.message)
+                    ? "Item is too large! Compress this file or choose a smaller one."
+                    : (error && error.message ? error.message : "Something went wrong while uploading your profile picture.");
                 window.HollowsideAuth.setStatus(
                     status,
-                    error && error.message ? error.message : "Something went wrong while uploading your profile picture.",
+                    message,
                     "error"
                 );
             }

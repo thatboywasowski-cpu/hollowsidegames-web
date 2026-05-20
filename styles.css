@@ -1321,6 +1321,105 @@ select option:disabled {
     }
 }
 
+@media (max-width: 760px) {
+    .site-header {
+        padding-top: 0.75rem;
+    }
+
+    .site-header-bar {
+        width: min(100% - 1rem, 1200px);
+        padding: 0.75rem;
+        align-items: flex-start;
+        border-radius: 24px;
+    }
+
+    .brand {
+        width: 100%;
+    }
+
+    .nav-links {
+        width: 100%;
+        justify-content: flex-start;
+        gap: 0.35rem;
+    }
+
+    .nav-link {
+        padding: 0.58rem 0.72rem;
+        font-size: 0.9rem;
+    }
+
+    .nav-account-shell {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .nav-account-button {
+        max-width: 100%;
+    }
+
+    .site-main,
+    .account-main {
+        width: min(100% - 1rem, 1200px);
+        padding-top: 1rem;
+    }
+
+    .hero-grid,
+    .account-layout,
+    .account-form-grid,
+    .composer-grid,
+    .post-edit-grid,
+    .news-featured-card,
+    .news-article-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .hero-card,
+    .content-card,
+    .mini-card,
+    .news-card,
+    .account-card,
+    .composer-card {
+        padding: 1rem;
+        border-radius: 22px;
+    }
+
+    .hero-card h1,
+    .page-heading,
+    .account-header h1 {
+        font-size: clamp(2.2rem, 13vw, 3.8rem);
+        letter-spacing: -0.04em;
+    }
+
+    .lead,
+    .account-header p {
+        font-size: 0.98rem;
+        line-height: 1.65;
+    }
+
+    .hero-actions,
+    .account-actions,
+    .post-actions {
+        align-items: stretch;
+    }
+
+    .button-link,
+    .account-button,
+    .post-action {
+        width: 100%;
+    }
+
+    .profile-stats,
+    .post-media-grid,
+    .stat-grid,
+    .card-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .media-editor-card {
+        padding: 1rem;
+    }
+}
+
 .comment-list {
     margin-top: 1rem;
     display: grid;

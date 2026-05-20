@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
     var status = document.getElementById("downloads-status");
+    var uploadInfo = document.getElementById("downloads-upload-info");
     var uploader = document.getElementById("downloads-uploader");
     var form = document.getElementById("download-form");
     var titleInput = document.getElementById("download-title");
@@ -14,6 +15,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var tabs = document.querySelectorAll("[data-download-tab]");
     var activeCategory = "games";
     var maxDownloadBytes = 200 * 1024 * 1024 * 1024;
+    var tooLargeMessage = "Item is too large! Compress this file or choose a smaller one.";
 
     if (!window.HollowsideAuth.isConfigured()) {
         window.HollowsideAuth.setStatus(status, "Supabase is not connected yet.", "error");
@@ -68,7 +70,9 @@ document.addEventListener("DOMContentLoaded", function () {
                         '<span class="account-chip">By ' + escapeHtml(item.author_display_name || "Hollowside") + '</span>' +
                     '</div>' +
                     '<div class="account-actions">' +
-                        '<a class="account-button primary" href="' + escapeHtml(item.download_url) + '" rel="noopener" target="_blank">Download</a>' +
+                        (viewerContext
+                            ? '<a class="account-button primary" href="' + escapeHtml(item.download_url) + '" rel="noopener" target="_blank">Download</a>'
+                            : '<a class="account-button primary" href="/login?redirect=/downloads">Log In To Download</a>') +
                     '</div>' +
                 '</article>'
             );
@@ -91,7 +95,10 @@ document.addEventListener("DOMContentLoaded", function () {
         } catch (error) {
             grid.innerHTML = "";
             copy.textContent = "Unable to load downloads right now.";
-            window.HollowsideAuth.setStatus(status, error && error.message ? error.message : "Something went wrong while loading downloads.", "error");
+            var message = error && error.message && error.message.indexOf("get_download_entries") !== -1
+                ? "Downloads need the latest Supabase database patch before they can load."
+                : (error && error.message ? error.message : "Something went wrong while loading downloads.");
+            window.HollowsideAuth.setStatus(status, message, "error");
         }
     }
 
@@ -130,7 +137,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (file && file.size > maxDownloadBytes) {
-            window.HollowsideAuth.setStatus(status, "Downloads cannot exceed 200 GB.", "error");
+            window.HollowsideAuth.setStatus(status, tooLargeMessage, "error");
             return;
         }
 
@@ -178,7 +185,10 @@ document.addEventListener("DOMContentLoaded", function () {
             window.HollowsideAuth.setStatus(status, "Download published.", "success");
             loadDownloads();
         } catch (error) {
-            window.HollowsideAuth.setStatus(status, error && error.message ? error.message : "Something went wrong while publishing the download.", "error");
+            var uploadMessage = error && error.message && /size|large|payload|limit|exceed/i.test(error.message)
+                ? tooLargeMessage
+                : (error && error.message ? error.message : "Something went wrong while publishing the download.");
+            window.HollowsideAuth.setStatus(status, uploadMessage, "error");
         } finally {
             window.HollowsideAuth.setBusy(form, false);
         }
@@ -188,9 +198,13 @@ document.addEventListener("DOMContentLoaded", function () {
         try {
             var contextResponse = await supabase.rpc("get_my_account_context");
             viewerContext = !contextResponse.error && contextResponse.data && contextResponse.data[0] ? contextResponse.data[0] : null;
-            uploader.hidden = !(viewerContext && viewerContext.can_publish_downloads);
+            var canUpload = !!(viewerContext && viewerContext.can_publish_downloads);
+            uploader.hidden = !canUpload;
+            uploadInfo.hidden = !canUpload;
         } catch (error) {
             viewerContext = null;
+            uploader.hidden = true;
+            uploadInfo.hidden = true;
         }
 
         loadDownloads();

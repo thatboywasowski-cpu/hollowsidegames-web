@@ -360,7 +360,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 var uploadFile = file;
                 if (file.type.indexOf("image/") === 0) {
                     if (file.size > 20 * 1024 * 1024) {
-                        throw new Error("Please keep post image uploads under 20 MB.");
+                        throw new Error("Item is too large! Compress this file or choose a smaller one.");
                     }
 
                     var editedFile = await window.HollowsideAuth.editImageFile(file, {
@@ -702,9 +702,12 @@ document.addEventListener("DOMContentLoaded", function () {
             window.HollowsideAuth.setStatus(status, "Profile post published.", "success");
             loadProfilePosts();
         } catch (error) {
+            var publishMessage = error && error.message && /size|large|payload|limit|exceed/i.test(error.message)
+                ? "Item is too large! Compress this file or choose a smaller one."
+                : (error && error.message ? error.message : "Something went wrong while publishing your profile post.");
             window.HollowsideAuth.setStatus(
                 status,
-                error && error.message ? error.message : "Something went wrong while publishing your profile post.",
+                publishMessage,
                 "error"
             );
         } finally {
