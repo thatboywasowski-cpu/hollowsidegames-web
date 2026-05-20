@@ -285,10 +285,13 @@
     display: flex;
     align-items: center;
     gap: 0.85rem;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .profile-mini-copy {
     min-width: 0;
+    overflow: hidden;
 }
 
 .profile-mini-copy strong,
@@ -296,6 +299,10 @@
 .profile-mini-copy p {
     display: block;
     margin: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .profile-mini-copy span,

@@ -487,20 +487,16 @@ document.addEventListener("DOMContentLoaded", function () {
     async function initialize() {
         try {
             var contextResponse = await supabase.rpc("get_my_account_context");
-            viewerContext = contextResponse.data && contextResponse.data[0] ? contextResponse.data[0] : null;
+            viewerContext = !contextResponse.error && contextResponse.data && contextResponse.data[0] ? contextResponse.data[0] : null;
 
             if (viewerContext && viewerContext.can_publish_news) {
                 composerCard.hidden = false;
             }
-
-            await loadFeed();
         } catch (error) {
-            window.HollowsideAuth.setStatus(
-                status,
-                error && error.message ? error.message : "Something went wrong while starting the news page.",
-                "error"
-            );
+            viewerContext = null;
         }
+
+        await loadFeed();
     }
 
     initialize();

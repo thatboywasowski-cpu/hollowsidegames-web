@@ -111,9 +111,60 @@
         return String(value || "")
             .trim()
             .toLowerCase()
-            .replace(/[^a-z0-9_.]/g, "")
-            .replace(/^\.+|\.+$/g, "")
-            .slice(0, 24);
+            .replace(/[^a-z0-9_]/g, "")
+            .slice(0, 20);
+    }
+
+    function validateUsername(value) {
+        var raw = String(value || "");
+        var normalized = raw.trim().toLowerCase();
+        var underscoreMatches = normalized.match(/_/g) || [];
+
+        if (/\s/.test(raw)) {
+            return {
+                ok: false,
+                username: normalized,
+                message: "Usernames cannot contain spaces."
+            };
+        }
+
+        if (!/^[a-z0-9_]+$/.test(normalized)) {
+            return {
+                ok: false,
+                username: normalized,
+                message: "Usernames can only use letters, numbers, and one underscore."
+            };
+        }
+
+        if (underscoreMatches.length > 1) {
+            return {
+                ok: false,
+                username: normalized,
+                message: "Usernames can only contain one underscore."
+            };
+        }
+
+        if (normalized.length < 3 || normalized.length > 20) {
+            return {
+                ok: false,
+                username: normalized,
+                message: "Usernames must be between 3 and 20 characters."
+            };
+        }
+
+        if (/^[0-9]+$/.test(normalized)) {
+            return {
+                ok: false,
+                username: normalized,
+                message: "Usernames cannot be all numbers."
+            };
+        }
+
+        return {
+            ok: true,
+            username: normalized,
+            message: ""
+        };
     }
 
     function fallbackUsername(user) {
@@ -197,9 +248,9 @@
         var lastError = null;
 
         for (var attempt = 0; attempt < 5; attempt += 1) {
-            var username = attempt === 0 ? usernameBase : (usernameBase + "_" + attempt).slice(0, 24);
+            var username = attempt === 0 ? usernameBase : (usernameBase.replace(/_/g, "") + "_" + attempt).slice(0, 20);
             if (username.length < 3) {
-                username = ("member_" + attempt + String(Date.now()).slice(-4)).slice(0, 24);
+                username = ("member_" + attempt + String(Date.now()).slice(-4)).slice(0, 20);
             }
 
             var insertResult = await client
@@ -349,6 +400,7 @@
         setStatus: setStatus,
         setBusy: setBusy,
         sanitizeUsername: sanitizeUsername,
+        validateUsername: validateUsername,
         fallbackUsername: fallbackUsername,
         fallbackDisplayName: fallbackDisplayName,
         loadProfile: loadProfile,

@@ -149,55 +149,13 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function renderActions() {
-    actions.innerHTML =
-        '<button class="post-action' + (postCard.viewer_reaction === "like" ? " is-active" : "") + '" type="button" data-reaction="like">' + window.HollowsideAuth.formatCountLabel(postCard.like_count, "Like", "Likes") + "</button>" +
-        '<button class="post-action' + (postCard.viewer_reaction === "dislike" ? " is-active" : "") + '" type="button" data-reaction="dislike">' + window.HollowsideAuth.formatCountLabel(postCard.dislike_count, "Dislike", "Dislikes") + "</button>" +
-        (viewerContext && viewerContext.account_id !== postCard.author_account_id
-            ? '<button class="post-action" type="button" data-report-post>Report Post</button>'
-            : "");
-        var reportPost = event.target.hasAttribute("data-report-post");
-if (!reaction || !postCard) {
-    if (!reportPost || !postCard) {
-        return;
+        actions.innerHTML =
+            '<button class="post-action' + (postCard.viewer_reaction === "like" ? " is-active" : "") + '" type="button" data-reaction="like">' + window.HollowsideAuth.formatCountLabel(postCard.like_count, "Like", "Likes") + "</button>" +
+            '<button class="post-action' + (postCard.viewer_reaction === "dislike" ? " is-active" : "") + '" type="button" data-reaction="dislike">' + window.HollowsideAuth.formatCountLabel(postCard.dislike_count, "Dislike", "Dislikes") + "</button>" +
+            (viewerContext && viewerContext.account_id !== postCard.author_account_id
+                ? '<button class="post-action" type="button" data-report-post>Report Post</button>'
+                : "");
     }
-
-    if (!viewerContext) {
-        window.location.href = "/login?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
-        return;
-    }
-
-    var reason = window.prompt("Report reason:", "Spam");
-    if (reason === null) {
-        return;
-    }
-
-    var details = window.prompt("Extra details (optional):", "") || "";
-
-    try {
-        var reportResponse = await supabase.rpc("create_report", {
-            p_target_type: "post",
-            p_target_account_id: postCard.author_account_id,
-            p_target_post_id: postId,
-            p_reason: reason.trim(),
-            p_details: details.trim()
-        });
-
-        if (reportResponse.error) {
-            throw reportResponse.error;
-        }
-
-        window.HollowsideAuth.setStatus(status, "Report submitted.", "success");
-    } catch (error) {
-        window.HollowsideAuth.setStatus(
-            status,
-            error && error.message ? error.message : "Something went wrong while submitting the report.",
-            "error"
-        );
-    }
-    return;
-}
-
-}
 
 
     function renderOwnerTools(post) {
@@ -275,8 +233,12 @@ if (!reaction || !postCard) {
 
     async function loadPost() {
         try {
-            var contextResponse = await supabase.rpc("get_my_account_context");
-            viewerContext = contextResponse.data && contextResponse.data[0] ? contextResponse.data[0] : null;
+            try {
+                var contextResponse = await supabase.rpc("get_my_account_context");
+                viewerContext = !contextResponse.error && contextResponse.data && contextResponse.data[0] ? contextResponse.data[0] : null;
+            } catch (contextError) {
+                viewerContext = null;
+            }
 
             postCard = await fetchDetail();
 
@@ -330,7 +292,45 @@ if (!reaction || !postCard) {
 
     actions.addEventListener("click", async function (event) {
         var reaction = event.target.getAttribute("data-reaction");
+        var reportPost = event.target.hasAttribute("data-report-post");
         if (!reaction || !postCard) {
+            if (!reportPost || !postCard) {
+                return;
+            }
+
+            if (!viewerContext) {
+                window.location.href = "/login?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
+                return;
+            }
+
+            var reason = window.prompt("Report reason:", "Spam");
+            if (reason === null) {
+                return;
+            }
+
+            var details = window.prompt("Extra details (optional):", "") || "";
+
+            try {
+                var reportResponse = await supabase.rpc("create_report", {
+                    p_target_type: "post",
+                    p_target_account_id: postCard.author_account_id,
+                    p_target_post_id: postId,
+                    p_reason: reason.trim(),
+                    p_details: details.trim()
+                });
+
+                if (reportResponse.error) {
+                    throw reportResponse.error;
+                }
+
+                window.HollowsideAuth.setStatus(status, "Report submitted.", "success");
+            } catch (error) {
+                window.HollowsideAuth.setStatus(
+                    status,
+                    error && error.message ? error.message : "Something went wrong while submitting the report.",
+                    "error"
+                );
+            }
             return;
         }
 

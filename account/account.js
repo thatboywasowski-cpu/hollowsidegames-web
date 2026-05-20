@@ -595,17 +595,20 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        var username = window.HollowsideAuth.sanitizeUsername(usernameInput.value);
+        var usernameResult = window.HollowsideAuth.validateUsername(usernameInput.value);
+        var username = usernameResult.username;
         var displayName = displayNameInput.value.trim() || username || "Hollowside Member";
         var bio = bioInput.value.trim();
         var websiteUrl = websiteInput.value.trim();
         var locationValue = locationInput.value.trim();
 
-        if (username.length < 3) {
-            window.HollowsideAuth.setStatus(status, "Usernames need to be at least 3 characters long and can only use letters, numbers, underscores, or periods.", "error");
+        if (!usernameResult.ok) {
+            window.HollowsideAuth.setStatus(status, usernameResult.message, "error");
             usernameInput.focus();
             return;
         }
+
+        usernameInput.value = username;
 
         try {
             window.HollowsideAuth.setBusy(profileForm, true);

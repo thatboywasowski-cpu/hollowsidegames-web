@@ -32,17 +32,20 @@ document.addEventListener("DOMContentLoaded", function () {
         window.HollowsideAuth.setStatus(status, "", "info");
 
         var displayName = displayNameInput.value.trim();
-        var username = window.HollowsideAuth.sanitizeUsername(usernameInput.value);
+        var usernameResult = window.HollowsideAuth.validateUsername(usernameInput.value);
+        var username = usernameResult.username;
         var email = emailInput.value.trim();
         var password = passwordInput.value;
         var confirmPassword = confirmInput.value;
         var consent = consentInput.checked;
 
-        if (username.length < 3) {
-            window.HollowsideAuth.setStatus(status, "Choose a username with at least 3 valid characters.", "error");
+        if (!usernameResult.ok) {
+            window.HollowsideAuth.setStatus(status, usernameResult.message, "error");
             usernameInput.focus();
             return;
         }
+
+        usernameInput.value = username;
 
         if (!email) {
             window.HollowsideAuth.setStatus(status, "Enter your email address to continue.", "error");
@@ -71,6 +74,22 @@ document.addEventListener("DOMContentLoaded", function () {
         try {
             window.HollowsideAuth.setBusy(form, true);
             var supabase = window.HollowsideAuth.createClient({ rememberMe: true });
+            var usernameCheck = await supabase
+                .from("profiles")
+                .select("id")
+                .eq("username", username)
+                .maybeSingle();
+
+            if (usernameCheck.error && usernameCheck.error.code !== "PGRST116") {
+                throw usernameCheck.error;
+            }
+
+            if (usernameCheck.data) {
+                window.HollowsideAuth.setStatus(status, "That username is already taken. Try another one.", "error");
+                usernameInput.focus();
+                return;
+            }
+
             var response = await supabase.auth.signUp({
                 email: email,
                 password: password,
