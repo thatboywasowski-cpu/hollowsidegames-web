@@ -28,6 +28,12 @@ body {
     color-scheme: dark;
 }
 
+html {
+    height: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
 body {
     min-height: 100dvh;
     background:
@@ -38,7 +44,8 @@ body {
     color: var(--text);
     font-family: var(--font);
     overflow-x: hidden;
-    overscroll-behavior-y: none;
+    overflow-y: visible;
+    overscroll-behavior-x: none;
     -webkit-tap-highlight-color: transparent;
 }
 
@@ -54,9 +61,12 @@ input {
 
 .page-shell {
     min-height: 100vh;
+    min-height: 100svh;
     min-height: 100dvh;
     position: relative;
+    isolation: isolate;
     overflow-x: hidden;
+    overflow-y: visible;
     background:
         radial-gradient(circle at top, rgba(255, 255, 255, 0.04), transparent 34%),
         radial-gradient(circle at bottom right, rgba(255, 255, 255, 0.03), transparent 24%),
@@ -70,8 +80,9 @@ input {
 .page-shell .dust-layer::after {
     content: "";
     pointer-events: none;
-    position: absolute;
+    position: fixed;
     inset: 0;
+    z-index: 0;
 }
 
 .page-shell::before {
