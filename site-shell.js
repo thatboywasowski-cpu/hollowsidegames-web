@@ -347,16 +347,6 @@ document.addEventListener("DOMContentLoaded", function () {
     async function refreshSessionUi() {
         var sessionResult = await supabase.auth.getSession();
         var session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
-
-        if (session) {
-            var refreshed = await supabase.auth.refreshSession().catch(function () {
-                return null;
-            });
-            if (refreshed && refreshed.data && refreshed.data.session) {
-                session = refreshed.data.session;
-            }
-        }
-
         var user = session && session.user ? session.user : null;
 
         if (!user) {

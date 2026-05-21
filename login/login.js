@@ -30,11 +30,8 @@ document.addEventListener("DOMContentLoaded", function () {
     rememberInput.checked = window.HollowsideAuth.getRememberPreference() !== false;
 
     var existingClient = window.HollowsideAuth.createClient();
-    existingClient.auth.getSession().then(async function (result) {
+    existingClient.auth.getSession().then(function (result) {
         if (result.data && result.data.session) {
-            await existingClient.auth.refreshSession().catch(function () {
-                return null;
-            });
             window.HollowsideAuth.setStatus(status, "You're already logged in. Redirecting...", "info");
             window.setTimeout(function () {
                 window.location.href = redirectUrl;
@@ -80,10 +77,6 @@ document.addEventListener("DOMContentLoaded", function () {
             if (response.data && response.data.user) {
                 await window.HollowsideAuth.ensureProfile(supabase, response.data.user);
             }
-
-            await supabase.auth.refreshSession().catch(function () {
-                return null;
-            });
 
             window.HollowsideAuth.setStatus(status, "Login successful. Redirecting...", "success");
             window.setTimeout(function () {
