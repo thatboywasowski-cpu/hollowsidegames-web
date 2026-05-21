@@ -47,12 +47,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         usernameInput.value = username;
 
-        if (!email) {
-            window.HollowsideAuth.setStatus(status, "Enter your email address to continue.", "error");
-            emailInput.focus();
-            return;
-        }
-
         if (password.length < 8) {
             window.HollowsideAuth.setStatus(status, "Use a password that is at least 8 characters long.", "error");
             passwordInput.focus();
@@ -91,13 +85,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
+            var loginEmail = email || window.HollowsideAuth.getVirtualEmailForUsername(username);
             var response = await supabase.auth.signUp({
-                email: email,
+                email: loginEmail,
                 password: password,
                 options: {
                     data: {
                         username: username,
-                        display_name: displayName || username
+                        display_name: displayName || username,
+                        account_email_provided: Boolean(email)
                     },
                     emailRedirectTo: window.location.origin + "/login"
                 }
@@ -110,7 +106,9 @@ document.addEventListener("DOMContentLoaded", function () {
             form.reset();
             window.HollowsideAuth.setStatus(
                 status,
-                "Account created. Check your email for the confirmation link from Hollowside Games before logging in.",
+                email
+                    ? "Account created as a Member. Check your email for the Hollowside Games code or confirmation message, then enable 2FA in account settings to become Trusted Member."
+                    : "Account created as a Member. You can log in with your username and add email 2FA later from account settings.",
                 "success"
             );
         } catch (error) {

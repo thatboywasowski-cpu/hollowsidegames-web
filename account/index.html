@@ -127,12 +127,12 @@
                                 <div class="account-form-grid">
                                     <div class="field">
                                         <label for="account-new-password">New Password</label>
-                                        <input id="account-new-password" type="password" autocomplete="new-password" placeholder="At least 8 characters">
+                                        <input id="account-new-password" type="password" autocomplete="new-password" placeholder="At least 8 characters" data-password-toggle>
                                     </div>
 
                                     <div class="field">
                                         <label for="account-confirm-password">Confirm Password</label>
-                                        <input id="account-confirm-password" type="password" autocomplete="new-password" placeholder="Re-enter your new password">
+                                        <input id="account-confirm-password" type="password" autocomplete="new-password" placeholder="Re-enter your new password" data-password-toggle>
                                     </div>
                                 </div>
 
@@ -229,6 +229,53 @@
             <section class="account-panel" data-account-panel="safety" hidden>
                 <section class="account-layout">
                     <div class="account-stack">
+                        <article class="account-card">
+                            <h2>Two-Factor Security</h2>
+                            <p>Add an email code check to protect login attempts and unlock Trusted Member status.</p>
+                            <div class="account-chip-row">
+                                <span class="account-chip" id="account-2fa-status">2FA loading...</span>
+                                <span class="account-chip" id="account-trusted-device-status">Device trust loading...</span>
+                            </div>
+
+                            <form class="account-form" id="account-2fa-request-form" action="#" method="post">
+                                <div class="field">
+                                    <label for="account-2fa-email">2FA Email</label>
+                                    <input id="account-2fa-email" type="email" placeholder="you@example.com" autocomplete="email">
+                                </div>
+
+                                <div class="account-actions">
+                                    <button class="account-button primary" type="submit">Send Email Code</button>
+                                </div>
+                            </form>
+
+                            <form class="account-form" id="account-2fa-verify-form" action="#" method="post">
+                                <div class="field">
+                                    <label for="account-2fa-code">6-Digit Code</label>
+                                    <input id="account-2fa-code" type="text" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" placeholder="123456">
+                                </div>
+
+                                <label class="auth-checkbox" for="account-trust-device">
+                                    <input id="account-trust-device" type="checkbox">
+                                    <span>Trust this device for 30 days after verification.</span>
+                                </label>
+
+                                <div class="account-actions">
+                                    <button class="account-button primary" type="submit">Verify And Activate 2FA</button>
+                                </div>
+                            </form>
+                        </article>
+
+                        <article class="account-card">
+                            <h2>Phone Security</h2>
+                            <p>Phone code delivery is ready for a provider-backed integration, but it cannot send texts until an SMS provider is connected.</p>
+                            <div class="account-form">
+                                <div class="field">
+                                    <label for="account-2fa-phone">Phone Number</label>
+                                    <input id="account-2fa-phone" type="tel" placeholder="SMS provider required" disabled>
+                                </div>
+                            </div>
+                        </article>
+
                         <article class="account-card">
                             <h2>Block List</h2>
                             <p>

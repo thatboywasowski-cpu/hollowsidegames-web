@@ -21,6 +21,10 @@
         return readConfig().storageKey + "-remember-mode";
     }
 
+    function getTrustedDeviceKey(userId) {
+        return readConfig().storageKey + "-trusted-device-" + String(userId || "");
+    }
+
     function storageAvailable(storage) {
         try {
             var key = "__hollowside_storage_test__";
@@ -260,6 +264,109 @@
             (user && user.email ? user.email.split("@")[0] : "") ||
             "Hollowside Member"
         );
+    }
+
+    function getVirtualEmailForUsername(username) {
+        return sanitizeUsername(username) + "@users.hollowsidegames.local";
+    }
+
+    function isVirtualEmail(email) {
+        return /@users\.hollowsidegames\.local$/i.test(String(email || ""));
+    }
+
+    function getTrustedDeviceUntil(userId) {
+        try {
+            var value = window.localStorage.getItem(getTrustedDeviceKey(userId));
+            var parsed = value ? new Date(value) : null;
+            if (!parsed || Number.isNaN(parsed.getTime()) || parsed <= new Date()) {
+                window.localStorage.removeItem(getTrustedDeviceKey(userId));
+                return null;
+            }
+
+            return parsed;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function isTrustedDevice(userId) {
+        return Boolean(getTrustedDeviceUntil(userId));
+    }
+
+    function trustDeviceFor30Days(userId) {
+        var until = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        try {
+            window.localStorage.setItem(getTrustedDeviceKey(userId), until.toISOString());
+        } catch (error) {
+            return null;
+        }
+
+        return until;
+    }
+
+    async function sendEmailOtp(client, email) {
+        var response = await client.auth.signInWithOtp({
+            email: email,
+            options: {
+                shouldCreateUser: false,
+                emailRedirectTo: window.location.origin + "/account#safety"
+            }
+        });
+
+        if (response.error) {
+            throw response.error;
+        }
+
+        return response;
+    }
+
+    async function verifyEmailOtp(client, email, token) {
+        var response = await client.auth.verifyOtp({
+            email: email,
+            token: token,
+            type: "email"
+        });
+
+        if (response.error) {
+            throw response.error;
+        }
+
+        return response;
+    }
+
+    async function resolveLoginEmail(client, identifier) {
+        var value = String(identifier || "").trim();
+
+        if (!value) {
+            throw new Error("Enter your username or email to continue.");
+        }
+
+        if (value.indexOf("@") !== -1) {
+            return value;
+        }
+
+        var usernameResult = validateUsername(value);
+        if (!usernameResult.ok) {
+            throw new Error(usernameResult.message);
+        }
+
+        var response = await client.rpc("resolve_login_email", {
+            p_identifier: usernameResult.username
+        });
+
+        if (response.error) {
+            if (/function .*resolve_login_email/i.test(response.error.message || "")) {
+                return getVirtualEmailForUsername(usernameResult.username);
+            }
+
+            throw response.error;
+        }
+
+        if (!response.data) {
+            throw new Error("No account was found for that username.");
+        }
+
+        return response.data;
     }
 
     function createAccountId() {
@@ -741,6 +848,47 @@
         return path;
     }
 
+    function initPasswordToggles(root) {
+        var scope = root || document;
+        var passwordInputs = scope.querySelectorAll('input[type="password"][data-password-toggle]');
+
+        passwordInputs.forEach(function (input) {
+            if (input.getAttribute("data-password-toggle-ready") === "true") {
+                return;
+            }
+
+            var field = input.closest(".field");
+            if (!field) {
+                return;
+            }
+
+            field.classList.add("password-field");
+
+            var button = document.createElement("button");
+            var icon = document.createElement("img");
+            button.type = "button";
+            button.className = "password-toggle";
+            button.setAttribute("aria-label", "Show password");
+            button.setAttribute("aria-pressed", "false");
+            button.title = "Show password";
+            icon.src = "/assets/icon-eye-open.svg";
+            icon.alt = "";
+            button.appendChild(icon);
+            field.appendChild(button);
+
+            button.addEventListener("click", function () {
+                var showing = input.type === "text";
+                input.type = showing ? "password" : "text";
+                button.setAttribute("aria-label", showing ? "Show password" : "Hide password");
+                button.setAttribute("aria-pressed", showing ? "false" : "true");
+                button.title = showing ? "Show password" : "Hide password";
+                icon.src = showing ? "/assets/icon-eye-open.svg" : "/assets/icon-eye-closed.svg";
+            });
+
+            input.setAttribute("data-password-toggle-ready", "true");
+        });
+    }
+
     async function startOAuthSignIn(provider, options) {
         var statusTarget = options && options.statusTarget;
         var redirectPath = normalizeRedirectPath(options && options.redirectPath ? options.redirectPath : "/");
@@ -780,6 +928,14 @@
         setBusy: setBusy,
         sanitizeUsername: sanitizeUsername,
         validateUsername: validateUsername,
+        getVirtualEmailForUsername: getVirtualEmailForUsername,
+        isVirtualEmail: isVirtualEmail,
+        getTrustedDeviceUntil: getTrustedDeviceUntil,
+        isTrustedDevice: isTrustedDevice,
+        trustDeviceFor30Days: trustDeviceFor30Days,
+        sendEmailOtp: sendEmailOtp,
+        verifyEmailOtp: verifyEmailOtp,
+        resolveLoginEmail: resolveLoginEmail,
         fallbackUsername: fallbackUsername,
         fallbackDisplayName: fallbackDisplayName,
         loadProfile: loadProfile,
@@ -799,12 +955,17 @@
         openImageViewer: openImageViewer,
         touchActivity: touchActivity,
         normalizeRedirectPath: normalizeRedirectPath,
+        initPasswordToggles: initPasswordToggles,
         startOAuthSignIn: startOAuthSignIn
     };
 
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", ensureFavicon);
+        document.addEventListener("DOMContentLoaded", function () {
+            ensureFavicon();
+            initPasswordToggles(document);
+        });
     } else {
         ensureFavicon();
+        initPasswordToggles(document);
     }
 })();

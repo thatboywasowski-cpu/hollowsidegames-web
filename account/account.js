@@ -49,6 +49,13 @@ document.addEventListener("DOMContentLoaded", function () {
     var moderationSanctionList = document.getElementById("moderation-sanction-list");
     var moderationRefreshReports = document.getElementById("moderation-refresh-reports");
     var moderationRefreshSanctions = document.getElementById("moderation-refresh-sanctions");
+    var twoFactorStatus = document.getElementById("account-2fa-status");
+    var trustedDeviceStatus = document.getElementById("account-trusted-device-status");
+    var twoFactorRequestForm = document.getElementById("account-2fa-request-form");
+    var twoFactorVerifyForm = document.getElementById("account-2fa-verify-form");
+    var twoFactorEmailInput = document.getElementById("account-2fa-email");
+    var twoFactorCodeInput = document.getElementById("account-2fa-code");
+    var trustDeviceInput = document.getElementById("account-trust-device");
 
     if (!window.HollowsideAuth.isConfigured()) {
         window.HollowsideAuth.setStatus(
@@ -92,6 +99,31 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         return parsed.toLocaleString();
+    }
+
+    function openAccountDialog(title, body, buttonLabel) {
+        var backdrop = document.createElement("div");
+        backdrop.className = "account-dialog-backdrop";
+        backdrop.innerHTML =
+            '<section class="account-dialog" role="dialog" aria-modal="true" aria-labelledby="account-dialog-title">' +
+                '<h2 id="account-dialog-title">' + window.HollowsideAuth.escapeHtml(title) + '</h2>' +
+                '<p>' + window.HollowsideAuth.escapeHtml(body) + '</p>' +
+                '<div class="account-actions">' +
+                    '<button class="account-button primary" type="button" data-account-dialog-close>' + window.HollowsideAuth.escapeHtml(buttonLabel || "Great!") + '</button>' +
+                '</div>' +
+            '</section>';
+
+        backdrop.addEventListener("click", function (event) {
+            if (event.target === backdrop || event.target.hasAttribute("data-account-dialog-close")) {
+                backdrop.remove();
+            }
+        });
+
+        document.body.appendChild(backdrop);
+        var closeButton = backdrop.querySelector("[data-account-dialog-close]");
+        if (closeButton) {
+            closeButton.focus();
+        }
     }
 
     function getRestrictionCopy() {
@@ -183,6 +215,9 @@ document.addEventListener("DOMContentLoaded", function () {
         accessChip.textContent = restrictionCopy.chip;
         publicId.textContent = accountId;
         email.textContent = user.email || "No email found";
+        if (window.HollowsideAuth.isVirtualEmail(user.email)) {
+            email.textContent = "No email added";
+        }
         role.textContent = roleLabel;
         created.textContent = formatDate((profile && profile.created_at) || user.created_at);
         usernameChange.textContent = profile && profile.username_change_available_at
@@ -193,6 +228,26 @@ document.addEventListener("DOMContentLoaded", function () {
         accessStatus.textContent = restrictionCopy.chip;
         restrictionNote.textContent = restrictionCopy.detail;
         setAvatar(profile, user);
+        renderTwoFactorState(user);
+    }
+
+    function renderTwoFactorState(user) {
+        var enabled = accountContext && accountContext.is_2fa_enabled;
+        var contact = accountContext && accountContext.two_factor_contact
+            ? accountContext.two_factor_contact
+            : (!window.HollowsideAuth.isVirtualEmail(user.email) ? user.email : "");
+        var trustedUntil = user ? window.HollowsideAuth.getTrustedDeviceUntil(user.id) : null;
+
+        twoFactorStatus.textContent = enabled
+            ? "2FA active" + (contact ? ": " + contact : "")
+            : "2FA not active";
+        trustedDeviceStatus.textContent = trustedUntil
+            ? "Trusted until " + formatDate(trustedUntil.toISOString())
+            : "This device is not trusted";
+
+        if (contact && !twoFactorEmailInput.value) {
+            twoFactorEmailInput.value = contact;
+        }
     }
 
     function fillForm(user, profile) {
@@ -508,6 +563,19 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         fillForm(currentUser, ensured.data);
+        if (accountContext && accountContext.should_show_legacy_2fa_notice) {
+            openAccountDialog(
+                "2FA Update",
+                "Thank you for verifying your account before hand! Hollowside recently rolled out a 2FA update, which you seemed to already have provided your account and secured 2FA with.",
+                "Great!"
+            );
+
+            try {
+                await supabase.rpc("acknowledge_legacy_2fa_notice");
+            } catch (error) {
+                accountContext.should_show_legacy_2fa_notice = false;
+            }
+        }
         syncTabFromHash();
         loadNotifications();
         loadBlockList();
@@ -700,6 +768,126 @@ document.addEventListener("DOMContentLoaded", function () {
             );
         } finally {
             window.HollowsideAuth.setBusy(passwordForm, false);
+        }
+    });
+
+    twoFactorRequestForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        if (!currentUser) {
+            return;
+        }
+
+        var requestedEmail = twoFactorEmailInput.value.trim();
+        if (!requestedEmail) {
+            window.HollowsideAuth.setStatus(status, "Enter the email address that should receive security codes.", "error");
+            twoFactorEmailInput.focus();
+            return;
+        }
+
+        try {
+            window.HollowsideAuth.setBusy(twoFactorRequestForm, true);
+
+            if (currentUser.email && !window.HollowsideAuth.isVirtualEmail(currentUser.email) && currentUser.email.toLowerCase() === requestedEmail.toLowerCase()) {
+                await window.HollowsideAuth.sendEmailOtp(supabase, requestedEmail);
+            } else {
+                var updateResult = await supabase.auth.updateUser({
+                    email: requestedEmail
+                }, {
+                    emailRedirectTo: window.location.origin + "/account#safety"
+                });
+
+                if (updateResult.error) {
+                    throw updateResult.error;
+                }
+            }
+
+            twoFactorVerifyForm.setAttribute("data-2fa-email", requestedEmail);
+            window.HollowsideAuth.setStatus(status, "Check that email for the 6-digit Hollowside security code.", "info");
+            twoFactorCodeInput.focus();
+        } catch (error) {
+            window.HollowsideAuth.setStatus(
+                status,
+                error && error.message ? error.message : "Something went wrong while sending the security code.",
+                "error"
+            );
+        } finally {
+            window.HollowsideAuth.setBusy(twoFactorRequestForm, false);
+        }
+    });
+
+    twoFactorVerifyForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        if (!currentUser) {
+            return;
+        }
+
+        var code = twoFactorCodeInput.value.trim();
+        var requestedEmail = twoFactorVerifyForm.getAttribute("data-2fa-email") || twoFactorEmailInput.value.trim();
+
+        if (!/^[0-9]{6}$/.test(code)) {
+            window.HollowsideAuth.setStatus(status, "Enter the 6-digit code from your email.", "error");
+            twoFactorCodeInput.focus();
+            return;
+        }
+
+        try {
+            window.HollowsideAuth.setBusy(twoFactorVerifyForm, true);
+
+            try {
+                await window.HollowsideAuth.verifyEmailOtp(supabase, requestedEmail, code);
+            } catch (verifyError) {
+                var emailChangeResponse = await supabase.auth.verifyOtp({
+                    email: requestedEmail,
+                    token: code,
+                    type: "email_change"
+                });
+
+                if (emailChangeResponse.error) {
+                    throw verifyError;
+                }
+            }
+
+            var updateProfile = await supabase
+                .from("profiles")
+                .update({
+                    trusted_2fa_enabled: true,
+                    trusted_2fa_channel: "email",
+                    trusted_2fa_contact: requestedEmail,
+                    trusted_2fa_verified_at: new Date().toISOString(),
+                    legacy_email_verification_notice_pending: false
+                })
+                .eq("id", currentUser.id)
+                .select("*")
+                .single();
+
+            if (updateProfile.error) {
+                throw updateProfile.error;
+            }
+
+            currentProfile = updateProfile.data;
+            if (trustDeviceInput.checked) {
+                window.HollowsideAuth.trustDeviceFor30Days(currentUser.id);
+            }
+
+            await refreshAccountContext();
+            fillForm(currentUser, currentProfile);
+            openAccountDialog(
+                "2FA Activated",
+                "Activating 2FA was a success. Your account now has Trusted Member security. This browser will follow the device trust choice you selected.",
+                "Great!"
+            );
+            window.HollowsideAuth.setStatus(status, "2FA activated successfully.", "success");
+            twoFactorCodeInput.value = "";
+        } catch (error) {
+            window.HollowsideAuth.setStatus(
+                status,
+                error && error.message ? error.message : "That code could not be verified.",
+                "error"
+            );
+        } finally {
+            window.HollowsideAuth.setBusy(twoFactorVerifyForm, false);
         }
     });
 

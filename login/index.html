@@ -74,17 +74,17 @@
     </button>
 </div>
 
-                <div class="auth-divider">Or sign in with email</div>
+                <div class="auth-divider">Or sign in with your account</div>
 
                 <form class="auth-form" id="login-form" action="#" method="post">
                     <div class="field">
-                        <label for="login-email">Email Address</label>
-                        <input id="login-email" name="email" type="email" placeholder="Enter your email address" autocomplete="email">
+                        <label for="login-identifier">Username or Email</label>
+                        <input id="login-identifier" name="identifier" type="text" placeholder="Enter your username or email" autocomplete="username">
                     </div>
 
                     <div class="field">
                         <label for="login-password">Password</label>
-                        <input id="login-password" name="password" type="password" placeholder="Enter your password" autocomplete="current-password">
+                        <input id="login-password" name="password" type="password" placeholder="Enter your password" autocomplete="current-password" data-password-toggle>
                     </div>
 
                     <div class="auth-utility">
@@ -97,6 +97,22 @@
                     </div>
 
                     <button class="auth-button" type="submit">Log In</button>
+                </form>
+
+                <form class="auth-form auth-section" id="login-2fa-form" action="#" method="post" hidden>
+                    <div class="field">
+                        <label for="login-2fa-code">Security Code</label>
+                        <input id="login-2fa-code" name="security-code" type="text" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" placeholder="Enter the 6-digit code">
+                    </div>
+
+                    <div class="auth-consent">
+                        <label class="auth-checkbox" for="login-trust-device">
+                            <input id="login-trust-device" type="checkbox">
+                            <span>Trust this device for 30 days.</span>
+                        </label>
+                    </div>
+
+                    <button class="auth-button" type="submit">Verify Code</button>
                 </form>
 
                 <p class="auth-footnote">

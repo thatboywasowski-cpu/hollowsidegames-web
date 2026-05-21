@@ -466,3 +466,27 @@
 .moderation-card .profile-mini-card {
     margin-bottom: 0.95rem;
 }
+
+.account-dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(10px);
+}
+
+.account-dialog {
+    width: min(100%, 28rem);
+    padding: 1.4rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(180deg, rgba(22, 22, 22, 0.98), rgba(8, 8, 8, 0.98));
+    box-shadow: var(--shadow);
+}
+
+.account-dialog h2 {
+    margin: 0;
+}

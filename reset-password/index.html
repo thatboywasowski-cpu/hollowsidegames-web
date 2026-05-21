@@ -79,12 +79,12 @@
                     <form class="auth-form" id="reset-update-form" action="#" method="post">
                         <div class="field">
                             <label for="reset-new-password">New Password</label>
-                            <input id="reset-new-password" name="new-password" type="password" placeholder="Enter a new password">
+                            <input id="reset-new-password" name="new-password" type="password" placeholder="Enter a new password" data-password-toggle>
                         </div>
 
                         <div class="field">
                             <label for="reset-confirm-password">Confirm Password</label>
-                            <input id="reset-confirm-password" name="confirm-password" type="password" placeholder="Re-enter your new password">
+                            <input id="reset-confirm-password" name="confirm-password" type="password" placeholder="Re-enter your new password" data-password-toggle>
                         </div>
 
                         <button class="auth-button" type="submit">Update Password</button>
@@ -95,12 +95,9 @@
     </div>
 
     <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script defer src="/supabase-config.js"></script>
-    <script defer src="/auth-app.js"></script>
-    <script defer src="/reset-password/reset-password.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script defer src="/supabase-config.js"></script>
 <script defer src="/auth-app.js"></script>
+<script defer src="/reset-password/reset-password.js"></script>
 <script defer src="/site-shell.js"></script>
 </body>
 </html>
