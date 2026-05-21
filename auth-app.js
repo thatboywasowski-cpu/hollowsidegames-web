@@ -21,10 +21,6 @@
         return readConfig().storageKey + "-remember-mode";
     }
 
-    function getTrustedDeviceKey(userId) {
-        return readConfig().storageKey + "-trusted-device-" + String(userId || "");
-    }
-
     function storageAvailable(storage) {
         try {
             var key = "__hollowside_storage_test__";
@@ -272,66 +268,6 @@
 
     function isVirtualEmail(email) {
         return /@users\.hollowsidegames\.local$/i.test(String(email || ""));
-    }
-
-    function getTrustedDeviceUntil(userId) {
-        try {
-            var value = window.localStorage.getItem(getTrustedDeviceKey(userId));
-            var parsed = value ? new Date(value) : null;
-            if (!parsed || Number.isNaN(parsed.getTime()) || parsed <= new Date()) {
-                window.localStorage.removeItem(getTrustedDeviceKey(userId));
-                return null;
-            }
-
-            return parsed;
-        } catch (error) {
-            return null;
-        }
-    }
-
-    function isTrustedDevice(userId) {
-        return Boolean(getTrustedDeviceUntil(userId));
-    }
-
-    function trustDeviceFor30Days(userId) {
-        var until = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-        try {
-            window.localStorage.setItem(getTrustedDeviceKey(userId), until.toISOString());
-        } catch (error) {
-            return null;
-        }
-
-        return until;
-    }
-
-    async function sendEmailOtp(client, email) {
-        var response = await client.auth.signInWithOtp({
-            email: email,
-            options: {
-                shouldCreateUser: false,
-                emailRedirectTo: window.location.origin + "/account#safety"
-            }
-        });
-
-        if (response.error) {
-            throw response.error;
-        }
-
-        return response;
-    }
-
-    async function verifyEmailOtp(client, email, token) {
-        var response = await client.auth.verifyOtp({
-            email: email,
-            token: token,
-            type: "email"
-        });
-
-        if (response.error) {
-            throw response.error;
-        }
-
-        return response;
     }
 
     async function resolveLoginEmail(client, identifier) {
@@ -889,11 +825,6 @@
         validateUsername: validateUsername,
         getVirtualEmailForUsername: getVirtualEmailForUsername,
         isVirtualEmail: isVirtualEmail,
-        getTrustedDeviceUntil: getTrustedDeviceUntil,
-        isTrustedDevice: isTrustedDevice,
-        trustDeviceFor30Days: trustDeviceFor30Days,
-        sendEmailOtp: sendEmailOtp,
-        verifyEmailOtp: verifyEmailOtp,
         resolveLoginEmail: resolveLoginEmail,
         fallbackUsername: fallbackUsername,
         fallbackDisplayName: fallbackDisplayName,

@@ -50,12 +50,10 @@ document.addEventListener("DOMContentLoaded", function () {
     var moderationRefreshReports = document.getElementById("moderation-refresh-reports");
     var moderationRefreshSanctions = document.getElementById("moderation-refresh-sanctions");
     var twoFactorStatus = document.getElementById("account-2fa-status");
-    var trustedDeviceStatus = document.getElementById("account-trusted-device-status");
     var twoFactorRequestForm = document.getElementById("account-2fa-request-form");
     var twoFactorVerifyForm = document.getElementById("account-2fa-verify-form");
     var twoFactorEmailInput = document.getElementById("account-2fa-email");
     var twoFactorCodeInput = document.getElementById("account-2fa-code");
-    var trustDeviceInput = document.getElementById("account-trust-device");
 
     if (!window.HollowsideAuth.isConfigured()) {
         window.HollowsideAuth.setStatus(
@@ -259,14 +257,10 @@ document.addEventListener("DOMContentLoaded", function () {
         var contact = accountContext && accountContext.two_factor_contact
             ? accountContext.two_factor_contact
             : (!window.HollowsideAuth.isVirtualEmail(user.email) ? user.email : "");
-        var trustedUntil = user ? window.HollowsideAuth.getTrustedDeviceUntil(user.id) : null;
 
         twoFactorStatus.textContent = enabled
             ? "2FA active" + (contact ? ": " + contact : "")
             : "2FA not active";
-        trustedDeviceStatus.textContent = trustedUntil
-            ? "Trusted until " + formatDate(trustedUntil.toISOString())
-            : "This device is not trusted";
 
         if (contact && !twoFactorEmailInput.value) {
             twoFactorEmailInput.value = contact;
@@ -797,23 +791,26 @@ document.addEventListener("DOMContentLoaded", function () {
 
         try {
             window.HollowsideAuth.setBusy(twoFactorRequestForm, true);
-
-            if (currentUser.email && !window.HollowsideAuth.isVirtualEmail(currentUser.email) && currentUser.email.toLowerCase() === requestedEmail.toLowerCase()) {
-                await window.HollowsideAuth.sendEmailOtp(supabase, requestedEmail);
-            } else {
-                var updateResult = await supabase.auth.updateUser({
+            var response = await supabase.functions.invoke("start-account-2fa", {
+                body: {
                     email: requestedEmail
-                }, {
-                    emailRedirectTo: window.location.origin + "/account#safety"
-                });
-
-                if (updateResult.error) {
-                    throw updateResult.error;
                 }
+            });
+
+            if (response.error) {
+                throw response.error;
             }
 
-            twoFactorVerifyForm.setAttribute("data-2fa-email", requestedEmail);
-            window.HollowsideAuth.setStatus(status, "Check that email for the 6-digit Hollowside security code.", "info");
+            if (response.data && response.data.error) {
+                throw new Error(response.data.error);
+            }
+
+            twoFactorVerifyForm.setAttribute("data-2fa-challenge-id", response.data.challengeId);
+            window.HollowsideAuth.setStatus(
+                status,
+                "Check that email" + (response.data.contactHint ? " (" + response.data.contactHint + ")" : "") + " for the 6-digit Hollowside security code. It expires in 15 minutes.",
+                "info"
+            );
             twoFactorCodeInput.focus();
         } catch (error) {
             window.HollowsideAuth.setStatus(
@@ -834,7 +831,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         var code = twoFactorCodeInput.value.trim();
-        var requestedEmail = twoFactorVerifyForm.getAttribute("data-2fa-email") || twoFactorEmailInput.value.trim();
+        var challengeId = twoFactorVerifyForm.getAttribute("data-2fa-challenge-id") || "";
 
         if (!/^[0-9]{6}$/.test(code)) {
             window.HollowsideAuth.setStatus(status, "Enter the 6-digit code from your email.", "error");
@@ -845,42 +842,27 @@ document.addEventListener("DOMContentLoaded", function () {
         try {
             window.HollowsideAuth.setBusy(twoFactorVerifyForm, true);
 
-            try {
-                await window.HollowsideAuth.verifyEmailOtp(supabase, requestedEmail, code);
-            } catch (verifyError) {
-                var emailChangeResponse = await supabase.auth.verifyOtp({
-                    email: requestedEmail,
-                    token: code,
-                    type: "email_change"
-                });
-
-                if (emailChangeResponse.error) {
-                    throw verifyError;
+            var response = await supabase.functions.invoke("verify-account-2fa", {
+                body: {
+                    challengeId: challengeId,
+                    code: code
                 }
+            });
+
+            if (response.error) {
+                throw response.error;
             }
 
-            var updateProfile = await supabase
-                .from("profiles")
-                .update({
-                    trusted_2fa_enabled: true,
-                    trusted_2fa_channel: "email",
-                    trusted_2fa_contact: requestedEmail,
-                    trusted_2fa_verified_at: new Date().toISOString(),
-                    legacy_email_verification_notice_pending: false
-                })
-                .eq("id", currentUser.id)
-                .select("*")
-                .single();
-
-            if (updateProfile.error) {
-                throw updateProfile.error;
+            if (response.data && response.data.error) {
+                throw new Error(response.data.error);
             }
 
-            currentProfile = updateProfile.data;
-            if (trustDeviceInput.checked) {
-                window.HollowsideAuth.trustDeviceFor30Days(currentUser.id);
+            var profileResult = await window.HollowsideAuth.loadProfile(supabase, currentUser.id);
+            if (profileResult.error) {
+                throw profileResult.error;
             }
 
+            currentProfile = profileResult.data;
             await refreshAccountContext();
             fillForm(currentUser, currentProfile);
             openAccountDialog(

@@ -6,7 +6,6 @@ document.addEventListener("DOMContentLoaded", function () {
     var passwordInput = document.getElementById("login-password");
     var rememberInput = document.getElementById("remember-me");
     var twoFactorCodeInput = document.getElementById("login-2fa-code");
-    var trustDeviceInput = document.getElementById("login-trust-device");
     var socialButtons = document.querySelectorAll("[data-social-provider]");
     var redirectUrl = window.HollowsideAuth.normalizeRedirectPath(
         new URLSearchParams(window.location.search).get("redirect") || "/"
@@ -42,35 +41,19 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    async function loadAccountContext(client) {
-        try {
-            var response = await client.rpc("get_my_account_context");
-            return response.data && response.data[0] ? response.data[0] : null;
-        } catch (error) {
-            return null;
+    async function finishLogin(client, session, rememberMe) {
+        window.HollowsideAuth.setRememberPreference(rememberMe);
+        var setSessionResponse = await client.auth.setSession({
+            access_token: session.access_token,
+            refresh_token: session.refresh_token
+        });
+
+        if (setSessionResponse.error) {
+            throw setSessionResponse.error;
         }
-    }
 
-    function getTwoFactorEmail(user, context) {
-        return (
-            (context && context.two_factor_contact) ||
-            (user && !window.HollowsideAuth.isVirtualEmail(user.email) ? user.email : "")
-        );
-    }
-
-    async function continueAfterLogin(client, user) {
-        var context = await loadAccountContext(client);
-        var twoFactorEnabled = context && context.is_2fa_enabled;
-        var twoFactorEmail = getTwoFactorEmail(user, context);
-
-        if (twoFactorEnabled && twoFactorEmail && !window.HollowsideAuth.isTrustedDevice(user.id)) {
-            await window.HollowsideAuth.sendEmailOtp(client, twoFactorEmail);
-            form.hidden = true;
-            twoFactorForm.hidden = false;
-            twoFactorForm.setAttribute("data-2fa-email", twoFactorEmail);
-            window.HollowsideAuth.setStatus(status, "A 6-digit login code was sent to your 2FA email.", "info");
-            twoFactorCodeInput.focus();
-            return;
+        if (setSessionResponse.data && setSessionResponse.data.user) {
+            await window.HollowsideAuth.ensureProfile(client, setSessionResponse.data.user);
         }
 
         window.HollowsideAuth.setStatus(status, "Login successful. Redirecting...", "success");
@@ -105,21 +88,42 @@ document.addEventListener("DOMContentLoaded", function () {
             window.HollowsideAuth.setRememberPreference(rememberMe);
 
             var supabase = window.HollowsideAuth.createClient({ rememberMe: rememberMe });
-            var email = await window.HollowsideAuth.resolveLoginEmail(supabase, identifier);
-            var response = await supabase.auth.signInWithPassword({
-                email: email,
-                password: password
+            var response = await supabase.functions.invoke("start-2fa-login", {
+                body: {
+                    identifier: identifier,
+                    password: password,
+                    rememberMe: rememberMe
+                }
             });
 
             if (response.error) {
                 throw response.error;
             }
 
-            if (response.data && response.data.user) {
-                await window.HollowsideAuth.ensureProfile(supabase, response.data.user);
+            if (response.data && response.data.error) {
+                throw new Error(response.data.error);
             }
 
-            await continueAfterLogin(supabase, response.data.user);
+            if (response.data && response.data.requires2fa) {
+                form.hidden = true;
+                twoFactorForm.hidden = false;
+                twoFactorForm.setAttribute("data-2fa-challenge-id", response.data.challengeId);
+                twoFactorForm.setAttribute("data-remember-me", rememberMe ? "true" : "false");
+                window.HollowsideAuth.setStatus(
+                    status,
+                    "A 6-digit login code was sent to your 2FA email" + (response.data.contactHint ? " (" + response.data.contactHint + ")" : "") + ". It expires in 15 minutes.",
+                    "info"
+                );
+                twoFactorCodeInput.focus();
+                return;
+            }
+
+            if (response.data && response.data.session) {
+                await finishLogin(supabase, response.data.session, rememberMe);
+                return;
+            }
+
+            throw new Error("The login server did not return a usable session.");
         } catch (error) {
             window.HollowsideAuth.setStatus(
                 status,
@@ -135,7 +139,8 @@ document.addEventListener("DOMContentLoaded", function () {
         event.preventDefault();
 
         var code = twoFactorCodeInput.value.trim();
-        var email = twoFactorForm.getAttribute("data-2fa-email") || "";
+        var challengeId = twoFactorForm.getAttribute("data-2fa-challenge-id") || "";
+        var rememberMe = twoFactorForm.getAttribute("data-remember-me") !== "false";
 
         if (!/^[0-9]{6}$/.test(code)) {
             window.HollowsideAuth.setStatus(status, "Enter the 6-digit security code.", "error");
@@ -145,18 +150,28 @@ document.addEventListener("DOMContentLoaded", function () {
 
         try {
             window.HollowsideAuth.setBusy(twoFactorForm, true);
-            var supabase = window.HollowsideAuth.createClient();
-            var response = await window.HollowsideAuth.verifyEmailOtp(supabase, email, code);
-            var user = response.data && response.data.user ? response.data.user : null;
+            var supabase = window.HollowsideAuth.createClient({ rememberMe: rememberMe });
+            var response = await supabase.functions.invoke("verify-2fa-login", {
+                body: {
+                    challengeId: challengeId,
+                    code: code
+                }
+            });
 
-            if (trustDeviceInput.checked && user) {
-                window.HollowsideAuth.trustDeviceFor30Days(user.id);
+            if (response.error) {
+                throw response.error;
             }
 
-            window.HollowsideAuth.setStatus(status, "Code verified. Redirecting...", "success");
-            window.setTimeout(function () {
-                window.location.href = redirectUrl;
-            }, 900);
+            if (response.data && response.data.error) {
+                throw new Error(response.data.error);
+            }
+
+            if (!response.data || !response.data.session) {
+                throw new Error("The 2FA server did not return a usable session.");
+            }
+
+            await finishLogin(supabase, response.data.session, rememberMe);
+
         } catch (error) {
             window.HollowsideAuth.setStatus(
                 status,

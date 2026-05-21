@@ -234,7 +234,6 @@
                             <p>Add an email code check to protect login attempts and unlock Trusted Member status.</p>
                             <div class="account-chip-row">
                                 <span class="account-chip" id="account-2fa-status">2FA loading...</span>
-                                <span class="account-chip" id="account-trusted-device-status">Device trust loading...</span>
                             </div>
 
                             <form class="account-form" id="account-2fa-request-form" action="#" method="post">
@@ -253,11 +252,6 @@
                                     <label for="account-2fa-code">6-Digit Code</label>
                                     <input id="account-2fa-code" type="text" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" placeholder="123456">
                                 </div>
-
-                                <label class="auth-checkbox" for="account-trust-device">
-                                    <input id="account-trust-device" type="checkbox">
-                                    <span>Trust this device for 30 days after verification.</span>
-                                </label>
 
                                 <div class="account-actions">
                                     <button class="account-button primary" type="submit">Verify And Activate 2FA</button>
