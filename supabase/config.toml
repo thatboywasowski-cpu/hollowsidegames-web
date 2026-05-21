@@ -1,0 +1,11 @@
+[functions.start-2fa-login]
+verify_jwt = false
+
+[functions.verify-2fa-login]
+verify_jwt = false
+
+[functions.start-account-2fa]
+verify_jwt = true
+
+[functions.verify-account-2fa]
+verify_jwt = true

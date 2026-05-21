@@ -34,6 +34,8 @@ supabase functions deploy start-account-2fa
 supabase functions deploy verify-account-2fa
 ```
 
+The repo includes `supabase/config.toml`. It keeps `start-2fa-login` and `verify-2fa-login` public because users do not have a session yet during login, while keeping the account-settings 2FA functions protected.
+
 ## Security Behavior
 
 - Password verification happens inside `start-2fa-login`, not in browser storage.
