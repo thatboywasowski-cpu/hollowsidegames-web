@@ -345,8 +345,26 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     async function refreshSessionUi() {
-        var userResult = await supabase.auth.getUser();
-        var user = userResult && userResult.data ? userResult.data.user : null;
+        var sessionResult = await supabase.auth.getSession();
+        var session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+
+        if (session) {
+            var refreshed = await supabase.auth.refreshSession().catch(function () {
+                return null;
+            });
+            if (refreshed && refreshed.data && refreshed.data.session) {
+                session = refreshed.data.session;
+            }
+        }
+
+        var user = session && session.user ? session.user : null;
+
+        if (!user) {
+            var userResult = await supabase.auth.getUser().catch(function () {
+                return null;
+            });
+            user = userResult && userResult.data ? userResult.data.user : null;
+        }
 
         if (!user) {
             showGuestState();

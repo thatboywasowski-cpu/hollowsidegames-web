@@ -17,13 +17,71 @@
         );
     }
 
+    function getRememberModeKey() {
+        return readConfig().storageKey + "-remember-mode";
+    }
+
+    function storageAvailable(storage) {
+        try {
+            var key = "__hollowside_storage_test__";
+            storage.setItem(key, "1");
+            storage.removeItem(key);
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function getRememberPreference() {
+        try {
+            var localMode = window.localStorage.getItem(getRememberModeKey());
+            if (localMode === "persistent") {
+                return true;
+            }
+
+            var sessionMode = window.sessionStorage.getItem(getRememberModeKey());
+            if (sessionMode === "session") {
+                return false;
+            }
+        } catch (error) {
+            return true;
+        }
+
+        return undefined;
+    }
+
+    function setRememberPreference(rememberMe) {
+        var key = getRememberModeKey();
+        try {
+            window.localStorage.removeItem(key);
+            window.sessionStorage.removeItem(key);
+
+            if (rememberMe === false) {
+                window.sessionStorage.setItem(key, "session");
+            } else {
+                window.localStorage.setItem(key, "persistent");
+            }
+        } catch (error) {
+            return;
+        }
+    }
+
     function pickStorage(rememberMe) {
         var config = readConfig();
         if (rememberMe === true) {
-            return window.localStorage;
+            return storageAvailable(window.localStorage) ? window.localStorage : window.sessionStorage;
         }
 
         if (rememberMe === false) {
+            return window.sessionStorage;
+        }
+
+        var remembered = getRememberPreference();
+        if (remembered === true) {
+            return storageAvailable(window.localStorage) ? window.localStorage : window.sessionStorage;
+        }
+
+        if (remembered === false) {
             return window.sessionStorage;
         }
 
@@ -67,6 +125,14 @@
         var config = readConfig();
         window.localStorage.removeItem(config.storageKey);
         window.sessionStorage.removeItem(config.storageKey);
+        window.localStorage.removeItem(getRememberModeKey());
+        window.sessionStorage.removeItem(getRememberModeKey());
+        window.localStorage.removeItem(config.storageKey + "-code-verifier");
+        window.sessionStorage.removeItem(config.storageKey + "-code-verifier");
+        window.localStorage.removeItem(config.storageKey + "-provider-token");
+        window.sessionStorage.removeItem(config.storageKey + "-provider-token");
+        window.localStorage.removeItem(config.storageKey + "-provider-refresh-token");
+        window.sessionStorage.removeItem(config.storageKey + "-provider-refresh-token");
     }
 
     function setStatus(target, message, state) {
@@ -680,6 +746,7 @@
         var redirectPath = normalizeRedirectPath(options && options.redirectPath ? options.redirectPath : "/");
 
         try {
+            setRememberPreference(true);
             var supabase = createClient({ rememberMe: true });
             var response = await supabase.auth.signInWithOAuth({
                 provider: provider,
@@ -707,6 +774,8 @@
         isConfigured: isConfigured,
         createClient: createClient,
         clearStoredSession: clearStoredSession,
+        getRememberPreference: getRememberPreference,
+        setRememberPreference: setRememberPreference,
         setStatus: setStatus,
         setBusy: setBusy,
         sanitizeUsername: sanitizeUsername,

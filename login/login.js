@@ -27,9 +27,14 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
     }
 
+    rememberInput.checked = window.HollowsideAuth.getRememberPreference() !== false;
+
     var existingClient = window.HollowsideAuth.createClient();
-    existingClient.auth.getSession().then(function (result) {
+    existingClient.auth.getSession().then(async function (result) {
         if (result.data && result.data.session) {
+            await existingClient.auth.refreshSession().catch(function () {
+                return null;
+            });
             window.HollowsideAuth.setStatus(status, "You're already logged in. Redirecting...", "info");
             window.setTimeout(function () {
                 window.location.href = redirectUrl;
@@ -60,6 +65,7 @@ document.addEventListener("DOMContentLoaded", function () {
         try {
             window.HollowsideAuth.setBusy(form, true);
             window.HollowsideAuth.clearStoredSession();
+            window.HollowsideAuth.setRememberPreference(rememberMe);
 
             var supabase = window.HollowsideAuth.createClient({ rememberMe: rememberMe });
             var response = await supabase.auth.signInWithPassword({
@@ -74,6 +80,10 @@ document.addEventListener("DOMContentLoaded", function () {
             if (response.data && response.data.user) {
                 await window.HollowsideAuth.ensureProfile(supabase, response.data.user);
             }
+
+            await supabase.auth.refreshSession().catch(function () {
+                return null;
+            });
 
             window.HollowsideAuth.setStatus(status, "Login successful. Redirecting...", "success");
             window.setTimeout(function () {

@@ -73,6 +73,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         try {
             window.HollowsideAuth.setBusy(form, true);
+            window.HollowsideAuth.setRememberPreference(true);
             var supabase = window.HollowsideAuth.createClient({ rememberMe: true });
             var usernameCheck = await supabase
                 .from("profiles")
