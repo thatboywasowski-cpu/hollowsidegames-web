@@ -848,47 +848,6 @@
         return path;
     }
 
-    function initPasswordToggles(root) {
-        var scope = root || document;
-        var passwordInputs = scope.querySelectorAll('input[type="password"][data-password-toggle]');
-
-        passwordInputs.forEach(function (input) {
-            if (input.getAttribute("data-password-toggle-ready") === "true") {
-                return;
-            }
-
-            var field = input.closest(".field");
-            if (!field) {
-                return;
-            }
-
-            field.classList.add("password-field");
-
-            var button = document.createElement("button");
-            var icon = document.createElement("img");
-            button.type = "button";
-            button.className = "password-toggle";
-            button.setAttribute("aria-label", "Show password");
-            button.setAttribute("aria-pressed", "false");
-            button.title = "Show password";
-            icon.src = "/assets/icon-eye-open.svg";
-            icon.alt = "";
-            button.appendChild(icon);
-            field.appendChild(button);
-
-            button.addEventListener("click", function () {
-                var showing = input.type === "text";
-                input.type = showing ? "password" : "text";
-                button.setAttribute("aria-label", showing ? "Show password" : "Hide password");
-                button.setAttribute("aria-pressed", showing ? "false" : "true");
-                button.title = showing ? "Show password" : "Hide password";
-                icon.src = showing ? "/assets/icon-eye-open.svg" : "/assets/icon-eye-closed.svg";
-            });
-
-            input.setAttribute("data-password-toggle-ready", "true");
-        });
-    }
-
     async function startOAuthSignIn(provider, options) {
         var statusTarget = options && options.statusTarget;
         var redirectPath = normalizeRedirectPath(options && options.redirectPath ? options.redirectPath : "/");
@@ -955,17 +914,14 @@
         openImageViewer: openImageViewer,
         touchActivity: touchActivity,
         normalizeRedirectPath: normalizeRedirectPath,
-        initPasswordToggles: initPasswordToggles,
         startOAuthSignIn: startOAuthSignIn
     };
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", function () {
             ensureFavicon();
-            initPasswordToggles(document);
         });
     } else {
         ensureFavicon();
-        initPasswordToggles(document);
     }
 })();

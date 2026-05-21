@@ -101,7 +101,27 @@ document.addEventListener("DOMContentLoaded", function () {
         return parsed.toLocaleString();
     }
 
-    function openAccountDialog(title, body, buttonLabel) {
+    function getLegacyNoticeDismissedKey(userId) {
+        return "hollowside-legacy-2fa-notice-dismissed-" + String(userId || "");
+    }
+
+    function hasDismissedLegacyNotice(userId) {
+        try {
+            return window.localStorage.getItem(getLegacyNoticeDismissedKey(userId)) === "true";
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function markLegacyNoticeDismissed(userId) {
+        try {
+            window.localStorage.setItem(getLegacyNoticeDismissedKey(userId), "true");
+        } catch (error) {
+            return;
+        }
+    }
+
+    function openAccountDialog(title, body, buttonLabel, onClose) {
         var backdrop = document.createElement("div");
         backdrop.className = "account-dialog-backdrop";
         backdrop.innerHTML =
@@ -114,8 +134,11 @@ document.addEventListener("DOMContentLoaded", function () {
             '</section>';
 
         backdrop.addEventListener("click", function (event) {
-            if (event.target === backdrop || event.target.hasAttribute("data-account-dialog-close")) {
+            if (event.target.hasAttribute("data-account-dialog-close")) {
                 backdrop.remove();
+                if (typeof onClose === "function") {
+                    onClose();
+                }
             }
         });
 
@@ -563,19 +586,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         fillForm(currentUser, ensured.data);
-        if (accountContext && accountContext.should_show_legacy_2fa_notice) {
-            openAccountDialog(
-                "2FA Update",
-                "Thank you for verifying your account before hand! Hollowside recently rolled out a 2FA update, which you seemed to already have provided your account and secured 2FA with.",
-                "Great!"
-            );
-
-            try {
-                await supabase.rpc("acknowledge_legacy_2fa_notice");
-            } catch (error) {
-                accountContext.should_show_legacy_2fa_notice = false;
-            }
-        }
         syncTabFromHash();
         loadNotifications();
         loadBlockList();

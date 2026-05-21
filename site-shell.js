@@ -256,6 +256,86 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    function getLegacyNoticeDismissedKey(userId) {
+        return "hollowside-legacy-2fa-notice-dismissed-" + String(userId || "");
+    }
+
+    function hasDismissedLegacyNotice(userId) {
+        try {
+            return window.localStorage.getItem(getLegacyNoticeDismissedKey(userId)) === "true";
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function markLegacyNoticeDismissed(userId) {
+        try {
+            window.localStorage.setItem(getLegacyNoticeDismissedKey(userId), "true");
+        } catch (error) {
+            return;
+        }
+    }
+
+    function openSiteDialog(title, body, buttonLabel, onClose) {
+        if (document.querySelector("[data-site-dialog]")) {
+            return;
+        }
+
+        var backdrop = document.createElement("div");
+        backdrop.className = "site-dialog-backdrop";
+        backdrop.setAttribute("data-site-dialog", "");
+        backdrop.innerHTML =
+            '<section class="site-dialog" role="dialog" aria-modal="true" aria-labelledby="site-dialog-title">' +
+                '<h2 id="site-dialog-title">' + window.HollowsideAuth.escapeHtml(title) + '</h2>' +
+                '<p>' + window.HollowsideAuth.escapeHtml(body) + '</p>' +
+                '<button class="site-dialog-button" type="button" data-site-dialog-close>' + window.HollowsideAuth.escapeHtml(buttonLabel || "Great!") + '</button>' +
+            '</section>';
+
+        backdrop.addEventListener("click", function (event) {
+            if (!event.target.hasAttribute("data-site-dialog-close")) {
+                return;
+            }
+
+            backdrop.remove();
+            if (typeof onClose === "function") {
+                onClose();
+            }
+        });
+
+        document.body.appendChild(backdrop);
+        var closeButton = backdrop.querySelector("[data-site-dialog-close]");
+        if (closeButton) {
+            closeButton.focus();
+        }
+    }
+
+    function showLegacyTwoFactorNotice(user, accountContext) {
+        if (
+            !user ||
+            !accountContext ||
+            !accountContext.should_show_legacy_2fa_notice ||
+            hasDismissedLegacyNotice(user.id)
+        ) {
+            return;
+        }
+
+        openSiteDialog(
+            "2FA Update",
+            "Thank you for verifying your account beforehand! Hollowside recently rolled out a 2FA update, which you seem to already have provided your account and secured 2FA with.",
+            "Great!",
+            async function () {
+                markLegacyNoticeDismissed(user.id);
+                accountContext.should_show_legacy_2fa_notice = false;
+
+                try {
+                    await supabase.rpc("acknowledge_legacy_2fa_notice");
+                } catch (error) {
+                    return;
+                }
+            }
+        );
+    }
+
     async function renderUserState(user, profile, accountContext, realAccountContext) {
         guestLinks.forEach(function (link) {
             link.classList.add("is-hidden");
@@ -390,6 +470,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         await renderUserState(user, profile, accountContext, realAccountContext);
+        showLegacyTwoFactorNotice(user, realAccountContext);
     }
 
     document.addEventListener("click", function (event) {

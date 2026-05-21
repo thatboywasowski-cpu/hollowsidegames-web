@@ -793,6 +793,50 @@ select option:disabled {
     box-shadow: var(--shadow);
 }
 
+.site-dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.74);
+    backdrop-filter: blur(10px);
+}
+
+.site-dialog {
+    width: min(100%, 28rem);
+    padding: 1.4rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(180deg, rgba(22, 22, 22, 0.98), rgba(8, 8, 8, 0.98));
+    box-shadow: var(--shadow);
+}
+
+.site-dialog h2 {
+    margin: 0;
+    font-size: 1.45rem;
+    letter-spacing: -0.03em;
+}
+
+.site-dialog p {
+    margin: 1rem 0 1.2rem;
+    color: var(--text);
+    line-height: 1.55;
+}
+
+.site-dialog-button {
+    min-height: 3rem;
+    padding: 0.85rem 1.05rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line-strong);
+    background: linear-gradient(180deg, #ffffff 0%, #d8d8d8 100%);
+    color: #050505;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
 .nav-menu-link,
 .nav-menu-button {
     min-height: 2.9rem;
