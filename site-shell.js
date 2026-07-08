@@ -41,6 +41,36 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    function setQuickAccessGuestState() {
+        var profileLink = document.querySelector("[data-quick-access-profile]");
+        var notificationsLink = document.querySelector("[data-quick-access-notifications]");
+
+        if (profileLink) {
+            profileLink.href = "/login";
+            profileLink.textContent = "Go to the login page";
+        }
+
+        if (notificationsLink) {
+            notificationsLink.href = "/signup";
+            notificationsLink.textContent = "Create a Hollowside account";
+        }
+    }
+
+    function setQuickAccessUserState(publicProfileHref) {
+        var profileLink = document.querySelector("[data-quick-access-profile]");
+        var notificationsLink = document.querySelector("[data-quick-access-notifications]");
+
+        if (profileLink) {
+            profileLink.href = publicProfileHref;
+            profileLink.textContent = "Go to your profile";
+        }
+
+        if (notificationsLink) {
+            notificationsLink.href = "/account#notifications";
+            notificationsLink.textContent = "View notifications";
+        }
+    }
+
     ensureDownloadsNavLink();
     syncActiveNavLink();
 
@@ -110,6 +140,7 @@ document.addEventListener("DOMContentLoaded", function () {
             link.classList.remove("is-hidden");
         });
         setGuestOnlyVisibility(true);
+        setQuickAccessGuestState();
         removeAccountShell();
         var emulationBar = document.querySelector("[data-disable-role-emulation-bar]");
         if (emulationBar) {
@@ -361,6 +392,7 @@ document.addEventListener("DOMContentLoaded", function () {
         var publicProfileHref = profile && profile.account_id
             ? "/profile?id=" + encodeURIComponent(profile.account_id)
             : "/account";
+        setQuickAccessUserState(publicProfileHref);
         var notificationKicker = accountContext && Number(accountContext.unread_notification_count || 0) > 0
             ? String(accountContext.unread_notification_count) + " new"
             : "inbox";
