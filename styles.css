@@ -1199,8 +1199,13 @@ select option:disabled {
 }
 
 .post-feed {
-    display: grid;
+    display: flex;
+    flex-direction: column;
     gap: 1rem;
+}
+
+.post-feed > .post-card {
+    flex: 0 0 auto;
 }
 
 .post-card {

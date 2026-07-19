@@ -36,10 +36,15 @@
 }
 
 .account-stack {
-    display: grid;
+    display: flex;
+    flex-direction: column;
     gap: 1.2rem;
-    align-content: start;
     min-width: 0;
+}
+
+.account-stack > .account-card,
+.account-stack > .composer-card {
+    flex: 0 0 auto;
 }
 
 
