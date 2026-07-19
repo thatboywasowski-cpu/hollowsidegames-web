@@ -499,6 +499,7 @@
         context.can_moderate_content = canModerateContent;
         context.can_moderate_news = isOwner || isCoOwner;
         context.can_publish_downloads = isOwner || isCoOwner || isDeveloper;
+        context.can_write_biographies = isOwner || isCoOwner || isDeveloper;
         context.is_role_emulated = true;
         context.emulated_role_key = roleKey;
         context.emulated_role_label = emulatedRole.label;

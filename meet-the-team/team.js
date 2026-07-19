@@ -343,8 +343,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 supabase.rpc("get_my_account_context"),
                 supabase.rpc("can_write_team_biographies")
             ]);
-            viewerContext = responses[0].data && responses[0].data[0] ? responses[0].data[0] : null;
+            var realViewerContext = responses[0].data && responses[0].data[0] ? responses[0].data[0] : null;
+            viewerContext = window.HollowsideAuth.applyRoleEmulation(realViewerContext);
             var canWrite = !responses[1].error && responses[1].data === true;
+            if (viewerContext && viewerContext.is_role_emulated) {
+                canWrite = canWrite && viewerContext.can_write_biographies === true;
+            }
             composer.hidden = !canWrite;
         } catch (error) {
             composer.hidden = true;
