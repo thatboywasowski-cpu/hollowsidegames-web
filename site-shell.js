@@ -22,6 +22,24 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    function ensureMeetTeamNavLink() {
+        if (nav.querySelector('a[href="/meet-the-team"]')) {
+            return;
+        }
+
+        var link = document.createElement("a");
+        link.className = "nav-link";
+        link.href = "/meet-the-team";
+        link.textContent = "Meet The Team";
+
+        var aboutLink = nav.querySelector('a[href="/about"]');
+        if (aboutLink) {
+            nav.insertBefore(link, aboutLink);
+        } else {
+            nav.appendChild(link);
+        }
+    }
+
     function syncActiveNavLink() {
         var currentPath = window.location.pathname.replace(/\/+$/, "") || "/";
         nav.querySelectorAll(".nav-link").forEach(function (link) {
@@ -72,6 +90,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     ensureDownloadsNavLink();
+    ensureMeetTeamNavLink();
     syncActiveNavLink();
 
     if (!window.HollowsideAuth || !window.HollowsideAuth.isConfigured()) {
@@ -178,6 +197,7 @@ document.addEventListener("DOMContentLoaded", function () {
         var allowedPrefixes = [
             "/news",
             "/downloads",
+            "/meet-the-team",
             "/account",
             "/login",
             "/signup",

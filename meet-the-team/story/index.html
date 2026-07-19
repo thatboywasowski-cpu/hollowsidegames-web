@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Story | Hollowside Games</title>
+    <meta name="description" content="A story from the people behind Hollowside Games.">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/auth.css">
+    <link rel="stylesheet" href="/account.css">
+    <link rel="stylesheet" href="/meet-the-team/team.css">
+</head>
+<body>
+    <div class="page-shell">
+        <div class="dust-layer" aria-hidden="true"></div>
+
+        <header class="site-header">
+            <div class="site-header-bar">
+                <a class="brand" href="/">
+                    <span class="brand-mark">H</span>
+                    <span class="brand-text"><strong>Hollowside Games</strong></span>
+                </a>
+
+                <nav class="nav-links" aria-label="Primary">
+                    <a class="nav-link" href="/">Home</a>
+                    <a class="nav-link" href="/help">Help</a>
+                    <a class="nav-link" href="/news">News</a>
+                    <a class="nav-link" href="/downloads">Downloads</a>
+                    <a class="nav-link is-current" href="/meet-the-team">Meet The Team</a>
+                    <a class="nav-link" href="/about">About</a>
+                    <a class="nav-link" href="/directory">Members</a>
+                    <a class="nav-link" href="/login">Login</a>
+                    <a class="nav-link" href="/signup">Sign Up</a>
+                </nav>
+            </div>
+        </header>
+
+        <main class="team-main team-story-main">
+            <p class="page-status" id="story-status">Loading biography...</p>
+
+            <article class="team-story" id="team-story" hidden>
+                <header class="team-story-header">
+                    <a class="team-back-link" href="/meet-the-team">Back to Meet The Team</a>
+                    <p class="team-story-expertise" id="story-expertise"></p>
+                    <h1 id="story-name"></h1>
+                    <p class="team-story-introduction" id="story-introduction"></p>
+                    <div class="team-tag-row" id="story-tags"></div>
+                    <div class="team-story-byline">
+                        <span>Written by <a id="story-author"></a></span>
+                        <span id="story-published"></span>
+                        <span id="story-edited" hidden></span>
+                    </div>
+                    <a class="team-linked-profile" id="story-linked-profile" hidden></a>
+                </header>
+
+                <div class="team-story-gallery" id="story-gallery" hidden></div>
+                <div class="team-markdown" id="story-biography"></div>
+
+                <div class="team-owner-tools" id="story-owner-tools" hidden>
+                    <button class="account-button" id="story-edit-toggle" type="button">Edit Biography</button>
+                    <button class="account-button danger" id="story-delete" type="button">Delete Biography</button>
+                </div>
+
+                <form class="team-editor team-story-editor" id="story-edit-form" hidden>
+                    <div class="team-editor-grid">
+                        <div class="field">
+                            <label for="edit-team-name">Name</label>
+                            <input id="edit-team-name" type="text" maxlength="120" required>
+                        </div>
+                        <div class="field">
+                            <label for="edit-team-expertise">Expertise</label>
+                            <input id="edit-team-expertise" type="text" maxlength="160" required>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="edit-team-introduction">Introduction</label>
+                        <textarea id="edit-team-introduction" maxlength="600" required></textarea>
+                    </div>
+
+                    <div class="field">
+                        <label for="edit-team-biography">Biography (Markdown)</label>
+                        <textarea class="team-biography-input" id="edit-team-biography" maxlength="30000" required></textarea>
+                    </div>
+
+                    <div class="team-editor-grid">
+                        <div class="field">
+                            <label for="edit-team-games">Game</label>
+                            <input id="edit-team-games" type="text" maxlength="500">
+                        </div>
+                        <div class="field">
+                            <label for="edit-team-category">Category</label>
+                            <select id="edit-team-category">
+                                <option value="employee">Official Employee</option>
+                                <option value="contributor">Contributor</option>
+                                <option value="both">Both</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="team-editor-grid">
+                        <div class="field">
+                            <label for="edit-team-account">Hollowside Account</label>
+                            <input id="edit-team-account" type="text" maxlength="240">
+                        </div>
+                        <div class="field">
+                            <label for="edit-team-pictures">Replace Pictures</label>
+                            <input id="edit-team-pictures" type="file" accept="image/png,image/jpeg,image/webp" multiple>
+                            <label class="team-remove-pictures" for="edit-team-remove-pictures">
+                                <input id="edit-team-remove-pictures" type="checkbox">
+                                <span>Remove all existing pictures</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="account-actions">
+                        <button class="account-button primary" type="submit">Save Changes</button>
+                        <button class="account-button" id="story-edit-cancel" type="button">Cancel</button>
+                    </div>
+                </form>
+            </article>
+        </main>
+
+        <footer class="shell-footer">
+            <div class="shell-footer-inner">
+                <span>(c) 2026 Hollowside Games</span>
+                <span>My Experience with Hollowside.</span>
+            </div>
+        </footer>
+    </div>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
+    <script defer src="/supabase-config.js"></script>
+    <script defer src="/auth-app.js"></script>
+    <script defer src="/site-shell.js"></script>
+    <script defer src="/meet-the-team/story/story.js"></script>
+</body>
+</html>

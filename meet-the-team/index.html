@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meet The Team | Hollowside Games</title>
+    <meta name="description" content="Stories from the employees and contributors behind Hollowside Games.">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/auth.css">
+    <link rel="stylesheet" href="/account.css">
+    <link rel="stylesheet" href="/meet-the-team/team.css">
+</head>
+<body>
+    <div class="page-shell">
+        <div class="dust-layer" aria-hidden="true"></div>
+
+        <header class="site-header">
+            <div class="site-header-bar">
+                <a class="brand" href="/">
+                    <span class="brand-mark">H</span>
+                    <span class="brand-text"><strong>Hollowside Games</strong></span>
+                </a>
+
+                <nav class="nav-links" aria-label="Primary">
+                    <a class="nav-link" href="/">Home</a>
+                    <a class="nav-link" href="/help">Help</a>
+                    <a class="nav-link" href="/news">News</a>
+                    <a class="nav-link" href="/downloads">Downloads</a>
+                    <a class="nav-link is-current" href="/meet-the-team">Meet The Team</a>
+                    <a class="nav-link" href="/about">About</a>
+                    <a class="nav-link" href="/directory">Members</a>
+                    <a class="nav-link" href="/login">Login</a>
+                    <a class="nav-link" href="/signup">Sign Up</a>
+                </nav>
+            </div>
+        </header>
+
+        <main class="team-main">
+            <p class="page-status" id="team-status" hidden></p>
+
+            <header class="team-page-header">
+                <div>
+                    <span class="eyebrow">Meet The Team</span>
+                    <h1>My Experience with <span>Hollowside.</span></h1>
+                </div>
+                <p>Firsthand stories from the people who build, perform, shape, and support Hollowside.</p>
+            </header>
+
+            <section class="team-composer-band" id="team-composer" hidden>
+                <div class="team-section-label">
+                    <span>Studio Access</span>
+                    <h2>Publish a biography</h2>
+                </div>
+
+                <form class="team-editor" id="team-form" action="#" method="post">
+                    <div class="team-editor-grid">
+                        <div class="field">
+                            <label for="team-name">Name</label>
+                            <input id="team-name" type="text" maxlength="120" required placeholder="Person's name">
+                        </div>
+                        <div class="field">
+                            <label for="team-expertise">Expertise</label>
+                            <input id="team-expertise" type="text" maxlength="160" required placeholder="Programmer, Actor, Modeler">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="team-introduction">Introduction</label>
+                        <textarea id="team-introduction" maxlength="600" required placeholder="A short introduction to their work and story."></textarea>
+                    </div>
+
+                    <div class="field">
+                        <label for="team-biography">Biography (Markdown)</label>
+                        <textarea class="team-biography-input" id="team-biography" maxlength="30000" required placeholder="# Their story&#10;&#10;Write the full biography here."></textarea>
+                    </div>
+
+                    <div class="team-editor-grid">
+                        <div class="field">
+                            <label for="team-games">Game</label>
+                            <input id="team-games" type="text" maxlength="500" placeholder="Eclipse of Gods, Faultline">
+                            <p class="file-hint">Separate multiple games with commas.</p>
+                        </div>
+                        <div class="field">
+                            <label for="team-category">Category</label>
+                            <select id="team-category">
+                                <option value="employee">Official Employee</option>
+                                <option value="contributor">Contributor</option>
+                                <option value="both">Both</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="team-editor-grid">
+                        <div class="field">
+                            <label for="team-account">Hollowside Account</label>
+                            <input id="team-account" type="text" maxlength="240" placeholder="https://hollowsidegames.com/profile/?id=hsg_...">
+                        </div>
+                        <div class="field">
+                            <label for="team-pictures">Pictures</label>
+                            <input id="team-pictures" type="file" accept="image/png,image/jpeg,image/webp" multiple>
+                            <p class="file-hint">Optional. Up to five pictures, 20 MB each.</p>
+                        </div>
+                    </div>
+
+                    <div class="account-actions">
+                        <button class="account-button primary" type="submit">Publish Biography</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="team-archive-band">
+                <div class="team-archive-heading">
+                    <span id="team-count">Loading stories...</span>
+                    <h2>The people behind the work.</h2>
+                </div>
+                <div class="team-entry-list" id="team-list"></div>
+                <button class="account-button team-load-more" id="team-load-more" type="button" hidden>Load More Stories</button>
+            </section>
+        </main>
+
+        <footer class="shell-footer">
+            <div class="shell-footer-inner">
+                <span>(c) 2026 Hollowside Games</span>
+                <span>People, work, and shared history.</span>
+            </div>
+        </footer>
+    </div>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="/supabase-config.js"></script>
+    <script defer src="/auth-app.js"></script>
+    <script defer src="/site-shell.js"></script>
+    <script defer src="/meet-the-team/team.js"></script>
+</body>
+</html>
