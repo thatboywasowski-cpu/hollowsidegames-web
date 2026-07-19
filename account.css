@@ -31,11 +31,15 @@
     display: grid;
     grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr);
     gap: 1.25rem;
+    align-items: start;
+    min-width: 0;
 }
 
 .account-stack {
     display: grid;
     gap: 1.2rem;
+    align-content: start;
+    min-width: 0;
 }
 
 
@@ -47,6 +51,7 @@
     padding: 1.5rem;
     box-shadow: var(--shadow);
     backdrop-filter: blur(18px);
+    min-width: 0;
 }
 
 .account-card h2,
@@ -208,12 +213,20 @@
     color: var(--dim);
     font-size: 0.92rem;
     line-height: 1.7;
+    overflow-wrap: anywhere;
 }
 
 @media (max-width: 900px) {
     .account-layout,
     .account-form-grid {
         grid-template-columns: 1fr;
+    }
+
+    .account-layout > .account-stack,
+    .directory-grid > *,
+    .connection-grid > * {
+        width: 100%;
+        min-width: 0;
     }
 }
 
@@ -230,6 +243,25 @@
     .account-profile-hero {
         align-items: flex-start;
         flex-direction: column;
+    }
+
+    .account-card,
+    .composer-card,
+    .profile-mini-card,
+    .profile-mini-copy {
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .account-form input,
+    .account-form select,
+    .composer-form input,
+    .composer-form select,
+    .composer-form textarea,
+    .directory-search-form input {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
     }
 }
 

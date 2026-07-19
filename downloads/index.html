@@ -54,6 +54,7 @@
                     <h3>Upload Limits</h3>
                     <ul class="list">
                         <li>Downloads can be listed up to 200 GB per item.</li>
+                        <li>Your Supabase plan and global Storage setting may impose a lower limit.</li>
                         <li>Profile pictures and post images stay capped at 20 MB.</li>
                         <li>Only accounts with `Able To Publish Downloads` can publish here.</li>
                     </ul>
@@ -125,8 +126,10 @@
                         <div class="field">
                             <label for="download-linux-file">Linux Build</label>
                             <input id="download-linux-file" type="file">
-                            <p class="file-hint">Provide one or more platform builds. Each build can be listed up to 200 GB.</p>
+                            <p class="file-hint">Provide one or more platform builds. Their combined listed size can be up to 200 GB.</p>
                         </div>
+
+                        <p class="page-status" id="download-upload-progress" role="status" hidden></p>
 
                         <div class="account-actions">
                             <button class="account-button primary" type="submit">Publish Download</button>
@@ -147,6 +150,7 @@
     </div>
 
     <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js"></script>
     <script defer src="/supabase-config.js"></script>
     <script defer src="/auth-app.js"></script>
     <script defer src="/site-shell.js"></script>
