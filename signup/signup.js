@@ -11,6 +11,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     socialButtons.forEach(function (button) {
         button.addEventListener("click", function () {
+            try {
+                window.sessionStorage.setItem("hollowside-oauth-signup-onboarding", "pending");
+            } catch (error) {
+                window.HollowsideAuth.setStatus(status, "Profile setup will remain available from account settings.", "info");
+            }
+
             window.HollowsideAuth.startOAuthSignIn(button.getAttribute("data-social-provider"), {
                 statusTarget: status,
                 redirectPath: "/account"
@@ -30,6 +36,12 @@ document.addEventListener("DOMContentLoaded", function () {
     form.addEventListener("submit", async function (event) {
         event.preventDefault();
         window.HollowsideAuth.setStatus(status, "", "info");
+
+        try {
+            window.sessionStorage.removeItem("hollowside-oauth-signup-onboarding");
+        } catch (error) {
+            // Signup still works when browser storage is unavailable.
+        }
 
         var displayName = displayNameInput.value.trim();
         var usernameResult = window.HollowsideAuth.validateUsername(usernameInput.value);

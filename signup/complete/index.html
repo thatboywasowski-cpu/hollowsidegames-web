@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finish Account | Hollowside Games</title>
+    <meta name="description" content="Choose the public identity for a new Hollowside Games account.">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/auth.css">
+</head>
+<body>
+    <div class="page-shell">
+        <div class="dust-layer" aria-hidden="true"></div>
+
+        <header class="site-header">
+            <div class="site-header-bar">
+                <a class="brand" href="/">
+                    <span class="brand-mark">H</span>
+                    <span class="brand-text"><strong>Hollowside Games</strong></span>
+                </a>
+
+                <nav class="nav-links" aria-label="Primary">
+                    <a class="nav-link" href="/">Home</a>
+                    <a class="nav-link" href="/help">Help</a>
+                    <a class="nav-link" href="/news">News</a>
+                    <a class="nav-link" href="/downloads">Downloads</a>
+                    <a class="nav-link" href="/about">About</a>
+                    <a class="nav-link" href="/directory">Members</a>
+                </nav>
+            </div>
+        </header>
+
+        <main class="auth-main">
+            <section class="auth-copy" aria-label="Account setup">
+                <span class="eyebrow">One Last Step</span>
+                <h1>Make this account <span>your own.</span></h1>
+                <p>
+                    Choose how your name appears around Hollowside, or keep the
+                    generated identity and update it later.
+                </p>
+
+                <ul class="feature-list">
+                    <li>Your username becomes your unique Hollowside handle.</li>
+                    <li>Your display name can be changed whenever your profile evolves.</li>
+                    <li>Your first intentional username change is available immediately.</li>
+                </ul>
+            </section>
+
+            <section class="auth-card" aria-labelledby="complete-heading">
+                <div class="auth-card-header">
+                    <h2 id="complete-heading">Finish Your Profile</h2>
+                    <p>After your first username change, the next one becomes available in 14 days.</p>
+                </div>
+
+                <p class="auth-status" id="oauth-complete-status">Loading your new account...</p>
+
+                <form class="auth-form" id="oauth-complete-form" hidden>
+                    <div class="field">
+                        <label for="oauth-display-name">Display Name</label>
+                        <input id="oauth-display-name" type="text" maxlength="48" placeholder="How your name should appear" autocomplete="name">
+                    </div>
+
+                    <div class="field">
+                        <label for="oauth-username">Username</label>
+                        <input id="oauth-username" type="text" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" placeholder="Choose a unique username" autocomplete="username" required>
+                    </div>
+
+                    <button class="auth-button" type="submit">Save And Continue</button>
+                    <button class="social-button" id="oauth-skip" type="button">Skip For Now</button>
+                </form>
+            </section>
+        </main>
+    </div>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="/supabase-config.js"></script>
+    <script defer src="/auth-app.js"></script>
+    <script defer src="/signup/complete/complete.js"></script>
+    <script defer src="/site-shell.js"></script>
+</body>
+</html>

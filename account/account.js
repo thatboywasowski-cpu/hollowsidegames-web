@@ -119,6 +119,24 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    function shouldFinishOAuthSignup(user, profile) {
+        var pending = false;
+        try {
+            pending = window.sessionStorage.getItem("hollowside-oauth-signup-onboarding") === "pending";
+            window.sessionStorage.removeItem("hollowside-oauth-signup-onboarding");
+        } catch (error) {
+            return false;
+        }
+
+        if (!pending) {
+            return false;
+        }
+
+        var createdValue = (profile && profile.created_at) || (user && user.created_at);
+        var createdAt = new Date(createdValue || "").getTime();
+        return Number.isFinite(createdAt) && Date.now() - createdAt < 30 * 60 * 1000;
+    }
+
     function openAccountDialog(title, body, buttonLabel, onClose) {
         var backdrop = document.createElement("div");
         backdrop.className = "account-dialog-backdrop";
@@ -241,9 +259,14 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         role.textContent = roleLabel;
         created.textContent = formatDate((profile && profile.created_at) || user.created_at);
-        usernameChange.textContent = profile && profile.username_change_available_at
-            ? "Available " + formatDate(profile.username_change_available_at)
-            : "Not available yet";
+        if (profile && profile.username_change_available_at) {
+            var usernameAvailableAt = new Date(profile.username_change_available_at).getTime();
+            usernameChange.textContent = Number.isFinite(usernameAvailableAt) && usernameAvailableAt <= Date.now()
+                ? "Available now"
+                : "Available " + formatDate(profile.username_change_available_at);
+        } else {
+            usernameChange.textContent = "Not available yet";
+        }
         verificationState.textContent = verificationLabel;
         verified.textContent = user.email_confirmed_at ? "Confirmed" : "Pending confirmation";
         accessStatus.textContent = restrictionCopy.chip;
@@ -570,6 +593,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 ensured.error.message || "Your profile table is not ready yet. Run the profile SQL in Supabase first.",
                 "error"
             );
+            return;
+        }
+
+        if (shouldFinishOAuthSignup(currentUser, ensured.data)) {
+            window.location.replace("/signup/complete/");
             return;
         }
 
