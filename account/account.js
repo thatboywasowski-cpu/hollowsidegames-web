@@ -506,7 +506,28 @@ document.addEventListener("DOMContentLoaded", function () {
         }));
     }
 
-    function renderNotificationFeed(items) {
+    function parseNotificationMetadata(item) {
+        if (!item || !item.metadata) {
+            return {};
+        }
+
+        if (typeof item.metadata === "object") {
+            return item.metadata;
+        }
+
+        try {
+            return JSON.parse(item.metadata);
+        } catch (error) {
+            return {};
+        }
+    }
+
+    function getSafeNotificationUrl(value) {
+        var url = String(value || "");
+        return /^\/(?!\/)/.test(url) ? url : "";
+    }
+
+    function renderNotificationFeed(items, totalUnread) {
         var unreadCount = 0;
         var warningCount = 0;
         var reportCount = 0;
@@ -525,9 +546,16 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
 
+        if (totalUnread !== null && totalUnread !== undefined && Number.isFinite(Number(totalUnread))) {
+            unreadCount = Number(totalUnread);
+        }
+
         notificationUnreadChip.textContent = unreadCount + " unread";
         warningCountChip.textContent = warningCount + " warnings in 30 days";
         reportCountChip.textContent = reportCount + " reports in 30 days";
+        window.dispatchEvent(new CustomEvent("hollowside-notifications-updated", {
+            detail: { unreadCount: unreadCount }
+        }));
 
         if (!items.length) {
             notificationFeed.innerHTML = '<p class="account-note">No notifications yet.</p>';
@@ -537,6 +565,11 @@ document.addEventListener("DOMContentLoaded", function () {
         notificationFeed.innerHTML = items.map(function (item) {
             var rolling = Number(item.rolling_count || 0);
             var chips = "";
+            var metadata = parseNotificationMetadata(item);
+            var primaryUrl = getSafeNotificationUrl(metadata.primary_action_url || item.link_url);
+            var secondaryUrl = getSafeNotificationUrl(metadata.secondary_action_url);
+            var primaryLabel = metadata.primary_action_label || (primaryUrl ? "Open" : "");
+            var secondaryLabel = metadata.secondary_action_label || (secondaryUrl ? "Open" : "");
 
             if (rolling > 0 && (item.kind === "warning" || item.kind === "report_received" || item.kind === "moderation_report")) {
                 chips += '<span class="account-chip">' + rolling + ' in 30 days</span>';
@@ -555,9 +588,10 @@ document.addEventListener("DOMContentLoaded", function () {
                         '</div>' +
                         '<div class="account-chip-row">' + chips + '</div>' +
                     '</div>' +
-                    '<p>' + window.HollowsideAuth.escapeHtml(item.body || "") + '</p>' +
+                    (item.body ? '<p>' + window.HollowsideAuth.escapeHtml(item.body) + '</p>' : "") +
                     '<div class="account-actions">' +
-                        (item.link_url ? '<a class="account-button primary" href="' + window.HollowsideAuth.escapeHtml(item.link_url) + '">Open</a>' : "") +
+                        (primaryUrl ? '<a class="account-button primary" href="' + window.HollowsideAuth.escapeHtml(primaryUrl) + '">' + window.HollowsideAuth.escapeHtml(primaryLabel) + '</a>' : "") +
+                        (secondaryUrl ? '<a class="account-button" href="' + window.HollowsideAuth.escapeHtml(secondaryUrl) + '">' + window.HollowsideAuth.escapeHtml(secondaryLabel) + '</a>' : "") +
                         (!item.is_read ? '<button class="account-button" type="button" data-notification-read="' + item.id + '">Mark Read</button>' : "") +
                     '</div>' +
                 '</article>'
@@ -664,15 +698,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
     async function loadNotifications() {
         try {
-            var response = await supabase.rpc("get_my_notifications", {
-                p_limit: 60
-            });
+            var results = await Promise.all([
+                supabase.rpc("get_my_notifications", { p_limit: 60 }),
+                supabase.rpc("get_unread_notification_count")
+            ]);
+            var response = results[0];
+            var countResponse = results[1];
 
             if (response.error) {
                 throw response.error;
             }
 
-            renderNotificationFeed(response.data || []);
+            renderNotificationFeed(
+                response.data || [],
+                countResponse.error ? null : Number(countResponse.data || 0)
+            );
         } catch (error) {
             notificationFeed.innerHTML = '<p class="account-note">Unable to load notifications right now.</p>';
         }

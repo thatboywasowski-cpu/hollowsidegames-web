@@ -179,13 +179,20 @@ document.addEventListener("DOMContentLoaded", function () {
             ? '<button class="comment-action' + (comment.viewer_reaction === "like" ? " is-active" : "") + '" type="button" data-comment-reaction="like" data-comment-id="' + escapeHtml(comment.id) + '">Like - ' + window.HollowsideAuth.formatCountLabel(comment.like_count, "Like", "Likes") + '</button>' +
               '<button class="comment-action' + (comment.viewer_reaction === "dislike" ? " is-active" : "") + '" type="button" data-comment-reaction="dislike" data-comment-id="' + escapeHtml(comment.id) + '">Dislike - ' + window.HollowsideAuth.formatCountLabel(comment.dislike_count, "Dislike", "Dislikes") + '</button>'
             : "";
+        var profileHref = "/profile?id=" + encodeURIComponent(comment.author_account_id);
+        var avatarMarkup = comment.author_avatar_url
+            ? '<img src="' + escapeHtml(comment.author_avatar_url) + '" alt="' + escapeHtml(comment.author_display_name) + ' profile picture">'
+            : escapeHtml(window.HollowsideAuth.getInitials({ display_name: comment.author_display_name }, null));
 
         return (
             '<article class="comment-card' + (depth ? " is-reply" : "") + (hidden ? " is-hidden-comment" : "") + '" data-comment-id="' + escapeHtml(comment.id) + '">' +
                 '<div class="comment-meta">' +
-                    '<strong>' + escapeHtml(comment.author_display_name) + '</strong>' +
-                    '<span class="identity-line">@' + escapeHtml(comment.author_username) + badge + '</span>' +
-                    '<span>' + escapeHtml(formatDateTime(comment.created_at)) + '</span>' +
+                    '<a class="comment-author-avatar" href="' + profileHref + '" aria-label="View ' + escapeHtml(comment.author_display_name) + ' profile">' + avatarMarkup + '</a>' +
+                    '<span class="comment-author-copy">' +
+                        '<strong>' + escapeHtml(comment.author_display_name) + '</strong>' +
+                        '<a class="comment-author-link identity-line" href="' + profileHref + '">@' + escapeHtml(comment.author_username) + badge + '</a>' +
+                    '</span>' +
+                    '<span class="comment-date">' + escapeHtml(formatDateTime(comment.created_at)) + '</span>' +
                 '</div>' +
                 (hidden
                     ? '<p class="comment-hidden-copy">This comment will no longer be shown to you.</p>'

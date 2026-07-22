@@ -884,6 +884,36 @@ select option:disabled {
     letter-spacing: 0.12em;
 }
 
+.nav-notifications-link {
+    position: relative;
+}
+
+.nav-notifications-link.has-unread {
+    padding-right: 2.9rem;
+}
+
+.nav-notification-count {
+    position: absolute;
+    top: 0.3rem;
+    right: 0.35rem;
+    min-width: 1.35rem;
+    height: 1.35rem;
+    padding: 0 0.28rem;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    border-radius: 999px;
+    background: #ffffff;
+    color: #080808;
+    font-size: 0.7rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.nav-notification-count[hidden] {
+    display: none;
+}
+
 .page-status {
     margin-bottom: 1rem;
     padding: 0.95rem 1rem;
@@ -1739,6 +1769,65 @@ select option:disabled {
     flex-wrap: wrap;
     color: var(--muted);
     font-size: 0.88rem;
+}
+
+.comment-author-avatar {
+    width: 2.35rem;
+    height: 2.35rem;
+    flex: 0 0 auto;
+    display: inline-grid;
+    place-items: center;
+    overflow: hidden;
+    border: 1px solid var(--line-strong);
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--text);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.comment-author-avatar img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+.comment-author-copy {
+    display: grid;
+    gap: 0.12rem;
+    min-width: 0;
+}
+
+.comment-author-link {
+    color: var(--muted);
+    text-decoration: none;
+}
+
+.comment-author-avatar:hover,
+.comment-author-avatar:focus-visible,
+.comment-author-link:hover,
+.comment-author-link:focus-visible {
+    color: var(--text);
+    text-decoration: underline;
+}
+
+.comment-date {
+    margin-left: auto;
+    color: var(--dim);
+}
+
+.post-card.is-notification-target {
+    border-color: var(--site-theme-outline) !important;
+    box-shadow: 0 0 0 3px rgba(var(--site-theme-outline-rgb), 0.28), var(--shadow);
+}
+
+@media (max-width: 560px) {
+    .comment-date {
+        width: 100%;
+        margin-left: 2.9rem;
+    }
 }
 
 .comment-actions {

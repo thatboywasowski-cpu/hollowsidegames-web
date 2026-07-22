@@ -32,6 +32,8 @@ document.addEventListener("DOMContentLoaded", function () {
     var entryGate = document.getElementById("profile-entry-gate");
     var entryButton = document.getElementById("profile-entry-button");
     var entryCopy = document.getElementById("profile-entry-copy");
+    var requestedPostId = params.get("post");
+    var hasFocusedRequestedPost = false;
 
     if (!window.HollowsideAuth.isConfigured()) {
         window.HollowsideAuth.setStatus(status, "Supabase is not connected yet.", "error");
@@ -490,13 +492,20 @@ document.addEventListener("DOMContentLoaded", function () {
             ? '<button class="comment-action' + (comment.viewer_reaction === "like" ? " is-active" : "") + '" type="button" data-comment-reaction="like" data-comment-id="' + escapeHtml(comment.id) + '">Like - ' + window.HollowsideAuth.formatCountLabel(comment.like_count, "Like", "Likes") + '</button>' +
               '<button class="comment-action' + (comment.viewer_reaction === "dislike" ? " is-active" : "") + '" type="button" data-comment-reaction="dislike" data-comment-id="' + escapeHtml(comment.id) + '">Dislike - ' + window.HollowsideAuth.formatCountLabel(comment.dislike_count, "Dislike", "Dislikes") + '</button>'
             : "";
+        var profileHref = "/profile?id=" + encodeURIComponent(comment.author_account_id);
+        var avatarMarkup = comment.author_avatar_url
+            ? '<img src="' + escapeHtml(comment.author_avatar_url) + '" alt="' + escapeHtml(comment.author_display_name) + ' profile picture">'
+            : escapeHtml(window.HollowsideAuth.getInitials({ display_name: comment.author_display_name }, null));
 
         return (
             '<article class="comment-card' + (depth ? " is-reply" : "") + (hidden ? " is-hidden-comment" : "") + '" data-comment-id="' + escapeHtml(comment.id) + '">' +
                 '<div class="comment-meta">' +
-                    '<strong>' + escapeHtml(comment.author_display_name) + '</strong>' +
-                    '<span class="identity-line">@' + escapeHtml(comment.author_username) + badge + '</span>' +
-                    '<span>' + escapeHtml(new Date(comment.created_at).toLocaleString()) + '</span>' +
+                    '<a class="comment-author-avatar" href="' + profileHref + '" aria-label="View ' + escapeHtml(comment.author_display_name) + ' profile">' + avatarMarkup + '</a>' +
+                    '<span class="comment-author-copy">' +
+                        '<strong>' + escapeHtml(comment.author_display_name) + '</strong>' +
+                        '<a class="comment-author-link identity-line" href="' + profileHref + '">@' + escapeHtml(comment.author_username) + badge + '</a>' +
+                    '</span>' +
+                    '<span class="comment-date">' + escapeHtml(new Date(comment.created_at).toLocaleString()) + '</span>' +
                 '</div>' +
                 (hidden
                     ? '<p class="comment-hidden-copy">This comment will no longer be shown to you.</p>'
@@ -538,6 +547,25 @@ document.addEventListener("DOMContentLoaded", function () {
                 '<div class="account-actions"><button class="account-button primary" type="submit">Comment</button></div>' +
             '</form>'
         );
+    }
+
+    function focusRequestedPost() {
+        if (!requestedPostId || hasFocusedRequestedPost) {
+            return;
+        }
+
+        var target = document.getElementById("profile-post-" + requestedPostId);
+        if (!target) {
+            return;
+        }
+
+        hasFocusedRequestedPost = true;
+        target.classList.add("is-notification-target");
+        target.focus({ preventScroll: true });
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        window.setTimeout(function () {
+            target.classList.remove("is-notification-target");
+        }, 2600);
     }
 
     function resetReplyState(postId) {
@@ -740,7 +768,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 return (
-                    '<article class="post-card" data-post-id="' + escapeHtml(post.id) + '">' +
+                    '<article class="post-card" id="profile-post-' + escapeHtml(post.id) + '" data-post-id="' + escapeHtml(post.id) + '" tabindex="-1">' +
                         '<div class="post-header">' +
                             '<div class="post-author">' +
                                 (post.author_avatar_url
@@ -779,6 +807,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }));
 
             postFeed.innerHTML = htmlBlocks.join("");
+            window.requestAnimationFrame(focusRequestedPost);
         } catch (error) {
             postFeed.innerHTML = "";
             postCopy.textContent = "Unable to load posts right now.";
@@ -1181,6 +1210,14 @@ document.addEventListener("DOMContentLoaded", function () {
             updateStatBlock(followingCount, profileCard.following_count);
             updateStatBlock(friendCount, profileCard.friend_count);
             renderActions(profileCard);
+
+            if (viewerContext && viewerContext.account_id !== profileCard.account_id) {
+                try {
+                    await supabase.rpc("record_profile_view", { p_account_id: profileCard.account_id });
+                } catch (error) {
+                    // Profile viewing should not fail if notification delivery is unavailable.
+                }
+            }
 
             if (viewerContext && viewerContext.account_id === profileCard.account_id && viewerContext.can_publish_personal_posts) {
                 composerCard.hidden = false;

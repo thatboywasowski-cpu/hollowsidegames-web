@@ -111,15 +111,58 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     var hasTouchedActivity = false;
+    var notificationPollId = null;
 
-    function getMenuLink(label, href, kicker) {
+    function getMenuLink(label, href, kicker, notificationCount) {
+        var count = Math.max(0, Number(notificationCount || 0));
+        var hasCount = count > 0;
         return (
-            '<a class="nav-menu-link" href="' + href + '">' +
+            '<a class="nav-menu-link' + (notificationCount !== undefined ? " nav-notifications-link" : "") + '" href="' + href + '">' +
                 '<span>' + window.HollowsideAuth.escapeHtml(label) + '</span>' +
                 '<span class="nav-menu-kicker">' + window.HollowsideAuth.escapeHtml(kicker) + '</span>' +
+                (notificationCount !== undefined
+                    ? '<span class="nav-notification-count"' + (hasCount ? "" : " hidden") + '>' + (count > 99 ? "99+" : count) + '</span>'
+                    : "") +
             '</a>'
         );
     }
+
+    function updateNotificationMenuCount(value) {
+        var count = Math.max(0, Number(value || 0));
+        var link = document.querySelector(".nav-notifications-link");
+        var badge = link && link.querySelector(".nav-notification-count");
+        var kicker = link && link.querySelector(".nav-menu-kicker");
+
+        if (!link || !badge) {
+            return;
+        }
+
+        badge.hidden = count < 1;
+        badge.textContent = count > 99 ? "99+" : String(count);
+        link.classList.toggle("has-unread", count > 0);
+        if (kicker) {
+            kicker.textContent = count > 0 ? "unread" : "inbox";
+        }
+    }
+
+    async function refreshNotificationMenuCount() {
+        if (document.hidden) {
+            return;
+        }
+
+        try {
+            var response = await supabase.rpc("get_unread_notification_count");
+            if (!response.error) {
+                updateNotificationMenuCount(response.data);
+            }
+        } catch (error) {
+            return;
+        }
+    }
+
+    window.addEventListener("hollowside-notifications-updated", function (event) {
+        updateNotificationMenuCount(event.detail && event.detail.unreadCount);
+    });
 
     function buildAvatarMarkup(profile, user) {
         var avatarUrl = profile && profile.avatar_url ? profile.avatar_url : "";
@@ -423,9 +466,8 @@ document.addEventListener("DOMContentLoaded", function () {
             ? "/profile?id=" + encodeURIComponent(profile.account_id)
             : "/account";
         setQuickAccessUserState(publicProfileHref);
-        var notificationKicker = accountContext && Number(accountContext.unread_notification_count || 0) > 0
-            ? String(accountContext.unread_notification_count) + " new"
-            : "inbox";
+        var unreadNotificationCount = accountContext ? Number(accountContext.unread_notification_count || 0) : 0;
+        var notificationKicker = unreadNotificationCount > 0 ? "unread" : "inbox";
         var restrictionCopy = accountContext && accountContext.restriction_label
             ? '<span class="nav-menu-role">' + window.HollowsideAuth.escapeHtml(accountContext.restriction_label) + '</span>'
             : "";
@@ -438,7 +480,7 @@ document.addEventListener("DOMContentLoaded", function () {
         var verifiedBadge = window.HollowsideAuth.getVerificationBadge(accountContext || profile, "Verified Hollowside account");
         var menuLinks = [
             getMenuLink("Account settings", "/account", "profile"),
-            getMenuLink("Notifications", "/account#notifications", notificationKicker),
+            getMenuLink("Notifications", "/account#notifications", notificationKicker, unreadNotificationCount),
             getMenuLink("Safety", "/account#safety", "blocks")
         ];
 
@@ -484,6 +526,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
         nav.appendChild(shell);
         wireMenuEvents();
+        updateNotificationMenuCount(unreadNotificationCount);
+
+        if (!notificationPollId) {
+            notificationPollId = window.setInterval(refreshNotificationMenuCount, 45000);
+        }
     }
 
     async function refreshSessionUi() {
