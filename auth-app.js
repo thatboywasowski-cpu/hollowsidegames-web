@@ -1,9 +1,102 @@
 (function () {
-    var siteThemes = ["black", "red", "purple", "white", "yellow", "green", "pink", "blue", "cyan"];
+    var siteThemeColors = {
+        black: "#080808",
+        red: "#ef646f",
+        purple: "#b984ef",
+        white: "#f5f5f5",
+        yellow: "#efcf5b",
+        green: "#69d295",
+        pink: "#ef8fbe",
+        blue: "#6fa0e6",
+        cyan: "#68d7de",
+        orange: "#e28c28",
+        lime: "#84cc16",
+        teal: "#14b8a6",
+        indigo: "#6366f1",
+        violet: "#7c3aed",
+        magenta: "#d946ef",
+        rose: "#f43f5e",
+        coral: "#ff6f61",
+        maroon: "#881e3e",
+        navy: "#1e3a8a",
+        "sky-blue": "#38bdf8",
+        mint: "#6ee7b7",
+        lavender: "#c4b5fd",
+        peach: "#fdba8c",
+        gold: "#d4af37",
+        silver: "#a8b0ba",
+        gray: "#6b7280",
+        brown: "#8b5e3c",
+        crimson: "#dc143c",
+        emerald: "#10b981",
+        "electric-blue": "#2563eb",
+        "neon-green": "#39ff14",
+        "hot-pink": "#ff4fa3",
+        amber: "#f59e0b",
+        midnight: "#111827",
+        ice: "#a5f3fc"
+    };
+    var siteThemePalettes = {
+        red: [[34, 7, 11], [52, 12, 18], [65, 16, 23]],
+        purple: [[25, 12, 40], [43, 22, 65], [55, 28, 82]],
+        white: [[44, 44, 44], [66, 66, 66], [80, 80, 80]],
+        yellow: [[37, 31, 6], [59, 49, 9], [73, 61, 12]],
+        green: [[7, 31, 19], [11, 50, 31], [15, 64, 40]],
+        pink: [[39, 12, 27], [62, 20, 43], [77, 25, 53]],
+        blue: [[8, 20, 41], [13, 34, 65], [17, 43, 81]],
+        cyan: [[5, 31, 34], [9, 50, 54], [12, 63, 68]]
+    };
+    var siteThemes = Object.keys(siteThemeColors);
     var siteThemeStorageKey = "hollowside-site-theme";
 
     function normalizeSiteTheme(theme) {
-        return siteThemes.indexOf(theme) !== -1 ? theme : "black";
+        var normalized = String(theme || "").trim().toLowerCase();
+        if (siteThemes.indexOf(normalized) !== -1 || /^custom-[0-9a-f]{6}$/.test(normalized)) {
+            return normalized;
+        }
+        return "black";
+    }
+
+    function getSiteThemeColor(theme) {
+        var normalized = normalizeSiteTheme(theme);
+        if (normalized.indexOf("custom-") === 0) {
+            return "#" + normalized.slice(7);
+        }
+        return siteThemeColors[normalized] || siteThemeColors.black;
+    }
+
+    function hexToRgb(hex) {
+        var value = String(hex || "").replace("#", "");
+        return [
+            parseInt(value.slice(0, 2), 16),
+            parseInt(value.slice(2, 4), 16),
+            parseInt(value.slice(4, 6), 16)
+        ];
+    }
+
+    function mixWithBlack(rgb, amount) {
+        return rgb.map(function (channel) {
+            return Math.round(3 + (channel - 3) * amount);
+        });
+    }
+
+    function getThemePalette(theme) {
+        var normalized = normalizeSiteTheme(theme);
+        var accent = hexToRgb(getSiteThemeColor(normalized));
+        var namedPalette = siteThemePalettes[normalized];
+        var page = namedPalette ? namedPalette[0] : mixWithBlack(accent, 0.14);
+        var surface = namedPalette ? namedPalette[1] : mixWithBlack(accent, 0.22);
+        var surfaceStrong = namedPalette ? namedPalette[2] : mixWithBlack(accent, 0.28);
+        var luminance = (accent[0] * 0.2126 + accent[1] * 0.7152 + accent[2] * 0.0722) / 255;
+
+        return {
+            accent: getSiteThemeColor(normalized),
+            accentRgb: accent,
+            page: page,
+            surface: surface,
+            surfaceStrong: surfaceStrong,
+            buttonText: luminance > 0.52 ? "#080808" : "#ffffff"
+        };
     }
 
     function getStoredSiteTheme() {
@@ -16,7 +109,31 @@
 
     function applySiteTheme(theme, persist) {
         var normalized = normalizeSiteTheme(theme);
-        document.body.setAttribute("data-site-theme", normalized);
+        var propertyNames = [
+            "--site-theme-page-rgb",
+            "--site-theme-surface-rgb",
+            "--site-theme-surface-strong-rgb",
+            "--site-theme-accent-rgb",
+            "--site-theme-accent",
+            "--site-theme-button-text"
+        ];
+
+        propertyNames.forEach(function (propertyName) {
+            document.body.style.removeProperty(propertyName);
+        });
+
+        document.body.setAttribute("data-site-theme", normalized.indexOf("custom-") === 0 ? "custom" : normalized);
+        document.body.setAttribute("data-site-theme-value", normalized);
+
+        if (normalized !== "black") {
+            var palette = getThemePalette(normalized);
+            document.body.style.setProperty("--site-theme-page-rgb", palette.page.join(", "));
+            document.body.style.setProperty("--site-theme-surface-rgb", palette.surface.join(", "));
+            document.body.style.setProperty("--site-theme-surface-strong-rgb", palette.surfaceStrong.join(", "));
+            document.body.style.setProperty("--site-theme-accent-rgb", palette.accentRgb.join(", "));
+            document.body.style.setProperty("--site-theme-accent", palette.accent);
+            document.body.style.setProperty("--site-theme-button-text", palette.buttonText);
+        }
 
         if (persist !== false) {
             try {
@@ -886,6 +1003,9 @@
         normalizeRedirectPath: normalizeRedirectPath,
         startOAuthSignIn: startOAuthSignIn,
         siteThemes: siteThemes,
+        siteThemeColors: siteThemeColors,
+        normalizeSiteTheme: normalizeSiteTheme,
+        getSiteThemeColor: getSiteThemeColor,
         applySiteTheme: applySiteTheme,
         clearStoredSiteTheme: clearStoredSiteTheme
     };

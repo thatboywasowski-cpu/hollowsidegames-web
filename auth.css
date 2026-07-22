@@ -362,5 +362,5 @@ body[data-site-theme]:not([data-site-theme="black"]) .auth-status[data-state="in
 body[data-site-theme]:not([data-site-theme="black"]) .auth-button {
     border-color: var(--site-theme-accent) !important;
     background: var(--site-theme-accent) !important;
-    color: #080808 !important;
+    color: var(--site-theme-button-text) !important;
 }

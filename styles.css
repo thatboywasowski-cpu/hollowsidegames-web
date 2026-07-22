@@ -19,6 +19,7 @@
     --site-theme-surface-strong-rgb: 25, 25, 25;
     --site-theme-accent-rgb: 255, 255, 255;
     --site-theme-accent: #ffffff;
+    --site-theme-button-text: #080808;
 }
 
 * {
@@ -2297,5 +2298,5 @@ body[data-site-theme]:not([data-site-theme="black"]) .auth-button,
 body[data-site-theme]:not([data-site-theme="black"]) .site-dialog-button {
     border-color: var(--site-theme-accent) !important;
     background: var(--site-theme-accent) !important;
-    color: #080808 !important;
+    color: var(--site-theme-button-text) !important;
 }

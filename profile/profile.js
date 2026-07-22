@@ -47,7 +47,6 @@ document.addEventListener("DOMContentLoaded", function () {
     var viewerContext = null;
     var profileCard = null;
     var replyingByPost = {};
-    var allowedProfileThemes = ["black", "red", "purple", "white", "yellow", "green", "pink", "blue", "cyan"];
 
     function escapeHtml(value) {
         return window.HollowsideAuth.escapeHtml(value);
@@ -84,7 +83,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function applyProfileCustomization(card) {
-        var theme = allowedProfileThemes.indexOf(card.profile_theme) !== -1 ? card.profile_theme : "black";
+        var theme = window.HollowsideAuth.normalizeSiteTheme(card.profile_theme);
         var blur = Math.max(0, Math.min(30, Number(card.profile_background_blur) || 0));
         var backgroundUrl = card.profile_background_url || "";
         var musicUrl = card.profile_music_url || "";

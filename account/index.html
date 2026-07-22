@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account | Hollowside Games</title>
     <meta name="description" content="Manage your Hollowside Games account.">
-    <link rel="stylesheet" href="/styles.css?v=20260722c">
-    <link rel="stylesheet" href="/auth.css?v=20260722c">
-    <link rel="stylesheet" href="/account.css?v=20260722c">
+    <link rel="stylesheet" href="/styles.css?v=20260722d">
+    <link rel="stylesheet" href="/auth.css?v=20260722d">
+    <link rel="stylesheet" href="/account.css?v=20260722d">
 </head>
 <body>
     <div class="page-shell">
@@ -144,16 +144,80 @@
 
                                     <div class="field">
                                         <label>Website And Profile Color</label>
-                                        <div class="profile-theme-grid" id="account-theme-grid" role="radiogroup" aria-label="Website and profile color">
-                                            <label class="profile-theme-option" style="--swatch: #080808"><input type="radio" name="profile-theme" value="black" checked><span class="profile-theme-swatch"></span><span>Black</span></label>
-                                            <label class="profile-theme-option" style="--swatch: #c53b45"><input type="radio" name="profile-theme" value="red"><span class="profile-theme-swatch"></span><span>Red</span></label>
-                                            <label class="profile-theme-option" style="--swatch: #9255d8"><input type="radio" name="profile-theme" value="purple"><span class="profile-theme-swatch"></span><span>Purple</span></label>
-                                            <label class="profile-theme-option" style="--swatch: #f1f1f1"><input type="radio" name="profile-theme" value="white"><span class="profile-theme-swatch"></span><span>White</span></label>
-                                            <label class="profile-theme-option" style="--swatch: #e0bd3e"><input type="radio" name="profile-theme" value="yellow"><span class="profile-theme-swatch"></span><span>Yellow</span></label>
-                                            <label class="profile-theme-option" style="--swatch: #45aa72"><input type="radio" name="profile-theme" value="green"><span class="profile-theme-swatch"></span><span>Green</span></label>
-                                            <label class="profile-theme-option" style="--swatch: #df6da4"><input type="radio" name="profile-theme" value="pink"><span class="profile-theme-swatch"></span><span>Pink</span></label>
-                                            <label class="profile-theme-option" style="--swatch: #427acb"><input type="radio" name="profile-theme" value="blue"><span class="profile-theme-swatch"></span><span>Blue</span></label>
-                                            <label class="profile-theme-option" style="--swatch: #38bac4"><input type="radio" name="profile-theme" value="cyan"><span class="profile-theme-swatch"></span><span>Cyan</span></label>
+                                        <div class="profile-theme-picker">
+                                            <div class="profile-theme-tabs" role="tablist" aria-label="Color collections">
+                                                <button class="profile-theme-tab is-active" id="theme-tab-basic" type="button" role="tab" aria-selected="true" aria-controls="theme-panel-basic" data-theme-panel-target="basic">Basic Colors</button>
+                                                <button class="profile-theme-tab" id="theme-tab-special" type="button" role="tab" aria-selected="false" aria-controls="theme-panel-special" data-theme-panel-target="special">Special Colors</button>
+                                                <button class="profile-theme-tab" id="theme-tab-custom" type="button" role="tab" aria-selected="false" aria-controls="theme-panel-custom" data-theme-panel-target="custom">Custom RGB</button>
+                                            </div>
+
+                                            <div class="profile-theme-panel" id="theme-panel-basic" role="tabpanel" aria-labelledby="theme-tab-basic" data-theme-panel="basic">
+                                                <div class="profile-theme-grid" id="account-theme-grid" role="radiogroup" aria-label="Basic website and profile colors">
+                                                    <label class="profile-theme-option" style="--swatch: #080808"><input type="radio" name="profile-theme" value="black" checked><span class="profile-theme-swatch"></span><span>Black</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #ef646f"><input type="radio" name="profile-theme" value="red"><span class="profile-theme-swatch"></span><span>Red</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #b984ef"><input type="radio" name="profile-theme" value="purple"><span class="profile-theme-swatch"></span><span>Purple</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #f5f5f5"><input type="radio" name="profile-theme" value="white"><span class="profile-theme-swatch"></span><span>White</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #efcf5b"><input type="radio" name="profile-theme" value="yellow"><span class="profile-theme-swatch"></span><span>Yellow</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #69d295"><input type="radio" name="profile-theme" value="green"><span class="profile-theme-swatch"></span><span>Green</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #ef8fbe"><input type="radio" name="profile-theme" value="pink"><span class="profile-theme-swatch"></span><span>Pink</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #6fa0e6"><input type="radio" name="profile-theme" value="blue"><span class="profile-theme-swatch"></span><span>Blue</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #68d7de"><input type="radio" name="profile-theme" value="cyan"><span class="profile-theme-swatch"></span><span>Cyan</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #e28c28"><input type="radio" name="profile-theme" value="orange"><span class="profile-theme-swatch"></span><span>Orange</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #84cc16"><input type="radio" name="profile-theme" value="lime"><span class="profile-theme-swatch"></span><span>Lime</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #14b8a6"><input type="radio" name="profile-theme" value="teal"><span class="profile-theme-swatch"></span><span>Teal</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #6366f1"><input type="radio" name="profile-theme" value="indigo"><span class="profile-theme-swatch"></span><span>Indigo</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #7c3aed"><input type="radio" name="profile-theme" value="violet"><span class="profile-theme-swatch"></span><span>Violet</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #d946ef"><input type="radio" name="profile-theme" value="magenta"><span class="profile-theme-swatch"></span><span>Magenta</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #f43f5e"><input type="radio" name="profile-theme" value="rose"><span class="profile-theme-swatch"></span><span>Rose</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #ff6f61"><input type="radio" name="profile-theme" value="coral"><span class="profile-theme-swatch"></span><span>Coral</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #881e3e"><input type="radio" name="profile-theme" value="maroon"><span class="profile-theme-swatch"></span><span>Maroon</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #1e3a8a"><input type="radio" name="profile-theme" value="navy"><span class="profile-theme-swatch"></span><span>Navy</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #38bdf8"><input type="radio" name="profile-theme" value="sky-blue"><span class="profile-theme-swatch"></span><span>Sky Blue</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #6ee7b7"><input type="radio" name="profile-theme" value="mint"><span class="profile-theme-swatch"></span><span>Mint</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #c4b5fd"><input type="radio" name="profile-theme" value="lavender"><span class="profile-theme-swatch"></span><span>Lavender</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #fdba8c"><input type="radio" name="profile-theme" value="peach"><span class="profile-theme-swatch"></span><span>Peach</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #d4af37"><input type="radio" name="profile-theme" value="gold"><span class="profile-theme-swatch"></span><span>Gold</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #a8b0ba"><input type="radio" name="profile-theme" value="silver"><span class="profile-theme-swatch"></span><span>Silver</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #6b7280"><input type="radio" name="profile-theme" value="gray"><span class="profile-theme-swatch"></span><span>Gray</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #8b5e3c"><input type="radio" name="profile-theme" value="brown"><span class="profile-theme-swatch"></span><span>Brown</span></label>
+                                                </div>
+                                            </div>
+
+                                            <div class="profile-theme-panel" id="theme-panel-special" role="tabpanel" aria-labelledby="theme-tab-special" data-theme-panel="special" hidden>
+                                                <div class="profile-theme-grid" role="radiogroup" aria-label="Special website and profile colors">
+                                                    <label class="profile-theme-option" style="--swatch: #dc143c"><input type="radio" name="profile-theme" value="crimson"><span class="profile-theme-swatch"></span><span>Crimson</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #10b981"><input type="radio" name="profile-theme" value="emerald"><span class="profile-theme-swatch"></span><span>Emerald</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #2563eb"><input type="radio" name="profile-theme" value="electric-blue"><span class="profile-theme-swatch"></span><span>Electric Blue</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #39ff14"><input type="radio" name="profile-theme" value="neon-green"><span class="profile-theme-swatch"></span><span>Neon Green</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #ff4fa3"><input type="radio" name="profile-theme" value="hot-pink"><span class="profile-theme-swatch"></span><span>Hot Pink</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #f59e0b"><input type="radio" name="profile-theme" value="amber"><span class="profile-theme-swatch"></span><span>Amber</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #111827"><input type="radio" name="profile-theme" value="midnight"><span class="profile-theme-swatch"></span><span>Midnight</span></label>
+                                                    <label class="profile-theme-option" style="--swatch: #a5f3fc"><input type="radio" name="profile-theme" value="ice"><span class="profile-theme-swatch"></span><span>Ice</span></label>
+                                                </div>
+                                            </div>
+
+                                            <div class="profile-theme-panel" id="theme-panel-custom" role="tabpanel" aria-labelledby="theme-tab-custom" data-theme-panel="custom" hidden>
+                                                <label class="profile-theme-option profile-theme-custom-option" id="account-custom-theme-option" style="--swatch: #ef646f">
+                                                    <input id="account-custom-theme-radio" type="radio" name="profile-theme" value="custom">
+                                                    <span class="profile-theme-swatch" id="account-custom-theme-swatch"></span>
+                                                    <span>Custom Color</span>
+                                                </label>
+                                                <div class="profile-theme-custom-controls">
+                                                    <label class="profile-color-wheel" for="account-theme-color">
+                                                        <span>Color Picker</span>
+                                                        <input id="account-theme-color" type="color" value="#ef646f">
+                                                    </label>
+                                                    <div class="field profile-theme-hex-field">
+                                                        <label for="account-theme-hex">Hex</label>
+                                                        <input id="account-theme-hex" type="text" value="#EF646F" inputmode="text" maxlength="7" pattern="#[0-9A-Fa-f]{6}" spellcheck="false">
+                                                    </div>
+                                                    <div class="profile-rgb-fields" aria-label="RGB channels">
+                                                        <div class="field"><label for="account-theme-red">R</label><input id="account-theme-red" type="number" min="0" max="255" step="1" value="239"></div>
+                                                        <div class="field"><label for="account-theme-green">G</label><input id="account-theme-green" type="number" min="0" max="255" step="1" value="100"></div>
+                                                        <div class="field"><label for="account-theme-blue">B</label><input id="account-theme-blue" type="number" min="0" max="255" step="1" value="111"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -436,8 +500,8 @@
 
     <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="/supabase-config.js"></script>
-    <script defer src="/auth-app.js?v=20260722c"></script>
-    <script defer src="/site-shell.js?v=20260722c"></script>
-    <script defer src="/account/account.js?v=20260722c"></script>
+    <script defer src="/auth-app.js?v=20260722d"></script>
+    <script defer src="/site-shell.js?v=20260722d"></script>
+    <script defer src="/account/account.js?v=20260722d"></script>
 </body>
 </html>

@@ -21,6 +21,15 @@ document.addEventListener("DOMContentLoaded", function () {
     var backgroundBlurInput = document.getElementById("account-background-blur");
     var backgroundBlurValue = document.getElementById("account-background-blur-value");
     var themeInputs = document.querySelectorAll('input[name="profile-theme"]');
+    var themeTabs = document.querySelectorAll("[data-theme-panel-target]");
+    var themePanels = document.querySelectorAll("[data-theme-panel]");
+    var customThemeRadio = document.getElementById("account-custom-theme-radio");
+    var customThemeOption = document.getElementById("account-custom-theme-option");
+    var customThemeColor = document.getElementById("account-theme-color");
+    var customThemeHex = document.getElementById("account-theme-hex");
+    var customThemeRed = document.getElementById("account-theme-red");
+    var customThemeGreen = document.getElementById("account-theme-green");
+    var customThemeBlue = document.getElementById("account-theme-blue");
     var musicInput = document.getElementById("account-music-input");
     var musicState = document.getElementById("account-music-state");
     var musicRemove = document.getElementById("account-music-remove");
@@ -301,16 +310,79 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    function clampColorChannel(value) {
+        return Math.max(0, Math.min(255, Math.round(Number(value) || 0)));
+    }
+
+    function normalizeHexColor(value) {
+        var normalized = String(value || "").trim().replace(/^#/, "");
+        return /^[0-9a-f]{6}$/i.test(normalized) ? "#" + normalized.toUpperCase() : "";
+    }
+
+    function rgbToHex(red, green, blue) {
+        return "#" + [red, green, blue].map(function (channel) {
+            return clampColorChannel(channel).toString(16).padStart(2, "0");
+        }).join("").toUpperCase();
+    }
+
+    function hexToRgb(hex) {
+        var normalized = normalizeHexColor(hex).slice(1);
+        return [
+            parseInt(normalized.slice(0, 2), 16),
+            parseInt(normalized.slice(2, 4), 16),
+            parseInt(normalized.slice(4, 6), 16)
+        ];
+    }
+
+    function setThemePanel(panelName) {
+        themeTabs.forEach(function (tab) {
+            var isActive = tab.getAttribute("data-theme-panel-target") === panelName;
+            tab.classList.toggle("is-active", isActive);
+            tab.setAttribute("aria-selected", isActive ? "true" : "false");
+            tab.tabIndex = isActive ? 0 : -1;
+        });
+
+        themePanels.forEach(function (panel) {
+            panel.hidden = panel.getAttribute("data-theme-panel") !== panelName;
+        });
+    }
+
+    function syncCustomThemeControls(hex) {
+        var normalized = normalizeHexColor(hex) || "#EF646F";
+        var channels = hexToRgb(normalized);
+        customThemeColor.value = normalized.toLowerCase();
+        customThemeHex.value = normalized;
+        customThemeRed.value = String(channels[0]);
+        customThemeGreen.value = String(channels[1]);
+        customThemeBlue.value = String(channels[2]);
+        customThemeOption.style.setProperty("--swatch", normalized);
+        return normalized;
+    }
+
+    function getCustomProfileTheme() {
+        var color = normalizeHexColor(customThemeHex.value) || normalizeHexColor(customThemeColor.value) || "#EF646F";
+        return "custom-" + color.slice(1).toLowerCase();
+    }
+
+    function previewCustomTheme() {
+        customThemeRadio.checked = true;
+        window.HollowsideAuth.applySiteTheme(getCustomProfileTheme(), false);
+    }
+
     function getSelectedProfileTheme() {
         var selected = document.querySelector('input[name="profile-theme"]:checked');
-        return selected ? selected.value : "black";
+        if (selected && selected.value === "custom") {
+            return getCustomProfileTheme();
+        }
+        return selected ? window.HollowsideAuth.normalizeSiteTheme(selected.value) : "black";
     }
 
     function renderCustomizationSettings(profile) {
         var backgroundUrl = (profile && profile.profile_background_url) || "";
         var blur = Math.max(0, Math.min(30, Number(profile && profile.profile_background_blur) || 0));
-        var theme = (profile && profile.profile_theme) || "black";
+        var theme = window.HollowsideAuth.normalizeSiteTheme((profile && profile.profile_theme) || "black");
         var musicUrl = (profile && profile.profile_music_url) || "";
+        var isCustomTheme = theme.indexOf("custom-") === 0;
 
         window.HollowsideAuth.applySiteTheme(theme, true);
 
@@ -326,8 +398,17 @@ document.addEventListener("DOMContentLoaded", function () {
         musicRemove.hidden = !musicUrl;
 
         themeInputs.forEach(function (input) {
-            input.checked = input.value === theme;
+            input.checked = isCustomTheme ? input.value === "custom" : input.value === theme;
         });
+
+        if (isCustomTheme) {
+            syncCustomThemeControls(window.HollowsideAuth.getSiteThemeColor(theme));
+            setThemePanel("custom");
+        } else {
+            var selectedThemeInput = document.querySelector('input[name="profile-theme"]:checked');
+            var selectedPanel = selectedThemeInput && selectedThemeInput.closest("[data-theme-panel]");
+            setThemePanel(selectedPanel ? selectedPanel.getAttribute("data-theme-panel") : "basic");
+        }
     }
 
     function fillForm(user, profile) {
@@ -782,8 +863,60 @@ document.addEventListener("DOMContentLoaded", function () {
     themeInputs.forEach(function (input) {
         input.addEventListener("change", function () {
             if (input.checked) {
-                window.HollowsideAuth.applySiteTheme(input.value, false);
+                window.HollowsideAuth.applySiteTheme(input.value === "custom" ? getCustomProfileTheme() : input.value, false);
             }
+        });
+    });
+
+    themeTabs.forEach(function (tab) {
+        tab.addEventListener("click", function () {
+            setThemePanel(tab.getAttribute("data-theme-panel-target"));
+        });
+
+        tab.addEventListener("keydown", function (event) {
+            if (["ArrowLeft", "ArrowRight", "Home", "End"].indexOf(event.key) === -1) {
+                return;
+            }
+
+            event.preventDefault();
+            var currentIndex = Array.prototype.indexOf.call(themeTabs, tab);
+            var targetIndex = event.key === "Home"
+                ? 0
+                : event.key === "End"
+                    ? themeTabs.length - 1
+                    : (currentIndex + (event.key === "ArrowRight" ? 1 : -1) + themeTabs.length) % themeTabs.length;
+            var targetTab = themeTabs[targetIndex];
+            setThemePanel(targetTab.getAttribute("data-theme-panel-target"));
+            targetTab.focus();
+        });
+    });
+
+    customThemeColor.addEventListener("input", function () {
+        syncCustomThemeControls(customThemeColor.value);
+        previewCustomTheme();
+    });
+
+    customThemeHex.addEventListener("input", function () {
+        var normalized = normalizeHexColor(customThemeHex.value);
+        if (normalized) {
+            syncCustomThemeControls(normalized);
+            previewCustomTheme();
+        }
+    });
+
+    customThemeHex.addEventListener("blur", function () {
+        syncCustomThemeControls(customThemeHex.value || customThemeColor.value);
+    });
+
+    [customThemeRed, customThemeGreen, customThemeBlue].forEach(function (input) {
+        input.addEventListener("input", function () {
+            var hex = rgbToHex(customThemeRed.value, customThemeGreen.value, customThemeBlue.value);
+            syncCustomThemeControls(hex);
+            previewCustomTheme();
+        });
+
+        input.addEventListener("blur", function () {
+            input.value = String(clampColorChannel(input.value));
         });
     });
 
