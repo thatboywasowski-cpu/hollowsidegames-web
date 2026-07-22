@@ -39,7 +39,9 @@ values (
         'audio/mp4',
         'audio/x-m4a',
         'audio/aac',
-        'audio/webm'
+        'audio/webm',
+        'audio/flac',
+        'audio/x-flac'
     ]
 )
 on conflict (id) do update

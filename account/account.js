@@ -394,7 +394,7 @@ document.addEventListener("DOMContentLoaded", function () {
         backgroundPreviewCopy.textContent = backgroundUrl ? "Background preview" : "No background selected";
         backgroundState.textContent = backgroundUrl ? "Background image active." : "PNG, JPEG, or WebP up to 20 MB.";
         backgroundRemove.hidden = !backgroundUrl;
-        musicState.textContent = musicUrl ? "Profile music active." : "MP3, OGG, WAV, M4A, AAC, or WebM up to 50 MB.";
+        musicState.textContent = musicUrl ? "Profile music active." : "MP3, OGG, WAV, M4A, AAC, WebM, or FLAC up to 50 MB.";
         musicRemove.hidden = !musicUrl;
 
         themeInputs.forEach(function (input) {
@@ -1012,9 +1012,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 "audio/mp4": "m4a",
                 "audio/x-m4a": "m4a",
                 "audio/aac": "aac",
-                "audio/webm": "webm"
+                "audio/webm": "webm",
+                "audio/flac": "flac",
+                "audio/x-flac": "flac"
             };
-            var supportedExtensions = ["mp3", "ogg", "wav", "m4a", "mp4", "aac", "webm"];
+            var supportedExtensions = ["mp3", "ogg", "wav", "m4a", "mp4", "aac", "webm", "flac"];
             var mimeByExtension = {
                 mp3: "audio/mpeg",
                 ogg: "audio/ogg",
@@ -1022,14 +1024,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 m4a: "audio/mp4",
                 mp4: "audio/mp4",
                 aac: "audio/aac",
-                webm: "audio/webm"
+                webm: "audio/webm",
+                flac: "audio/flac"
             };
 
             try {
                 var nameExtension = (file.name.split(".").pop() || "").toLowerCase();
                 var extension = supportedTypes[file.type] || (supportedExtensions.indexOf(nameExtension) !== -1 ? nameExtension : "");
                 if (!extension) {
-                    throw new Error("Choose an MP3, OGG, WAV, M4A, AAC, or WebM file for profile music.");
+                    throw new Error("Choose an MP3, OGG, WAV, M4A, AAC, WebM, or FLAC file for profile music.");
                 }
 
                 if (file.size > 50 * 1024 * 1024) {
