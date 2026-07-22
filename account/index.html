@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account | Hollowside Games</title>
     <meta name="description" content="Manage your Hollowside Games account.">
-    <link rel="stylesheet" href="/styles.css?v=20260722d">
-    <link rel="stylesheet" href="/auth.css?v=20260722d">
-    <link rel="stylesheet" href="/account.css?v=20260722d">
+    <link rel="stylesheet" href="/styles.css?v=20260722f">
+    <link rel="stylesheet" href="/auth.css?v=20260722f">
+    <link rel="stylesheet" href="/account.css?v=20260722f">
 </head>
 <body>
     <div class="page-shell">
@@ -216,6 +216,43 @@
                                                         <div class="field"><label for="account-theme-green">G</label><input id="account-theme-green" type="number" min="0" max="255" step="1" value="100"></div>
                                                         <div class="field"><label for="account-theme-blue">B</label><input id="account-theme-blue" type="number" min="0" max="255" step="1" value="111"></div>
                                                     </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="field profile-secondary-theme-field">
+                                        <div class="profile-secondary-theme-header">
+                                            <div class="profile-secondary-theme-title">
+                                                <label for="account-secondary-theme-enabled">Secondary Color</label>
+                                                <span class="account-chip">Optional</span>
+                                            </div>
+                                            <label class="profile-secondary-theme-toggle">
+                                                <input id="account-secondary-theme-enabled" type="checkbox" aria-controls="account-secondary-theme-controls">
+                                                <span class="profile-secondary-toggle-track" aria-hidden="true"></span>
+                                                <span>Use secondary color</span>
+                                            </label>
+                                        </div>
+
+                                        <div class="profile-theme-picker profile-secondary-theme-controls" id="account-secondary-theme-controls" hidden>
+                                            <div class="field">
+                                                <label>Preset Colors</label>
+                                                <div class="profile-secondary-swatch-grid" id="account-secondary-theme-presets" role="group" aria-label="Secondary color presets"></div>
+                                            </div>
+
+                                            <div class="profile-theme-custom-controls">
+                                                <label class="profile-color-wheel" for="account-secondary-theme-color">
+                                                    <span>Color Picker</span>
+                                                    <input id="account-secondary-theme-color" type="color" value="#ffffff">
+                                                </label>
+                                                <div class="field profile-theme-hex-field">
+                                                    <label for="account-secondary-theme-hex">Hex</label>
+                                                    <input id="account-secondary-theme-hex" type="text" value="#FFFFFF" inputmode="text" maxlength="7" pattern="#[0-9A-Fa-f]{6}" spellcheck="false">
+                                                </div>
+                                                <div class="profile-rgb-fields" aria-label="Secondary RGB channels">
+                                                    <div class="field"><label for="account-secondary-theme-red">R</label><input id="account-secondary-theme-red" type="number" min="0" max="255" step="1" value="255"></div>
+                                                    <div class="field"><label for="account-secondary-theme-green">G</label><input id="account-secondary-theme-green" type="number" min="0" max="255" step="1" value="255"></div>
+                                                    <div class="field"><label for="account-secondary-theme-blue">B</label><input id="account-secondary-theme-blue" type="number" min="0" max="255" step="1" value="255"></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -500,8 +537,8 @@
 
     <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="/supabase-config.js"></script>
-    <script defer src="/auth-app.js?v=20260722d"></script>
-    <script defer src="/site-shell.js?v=20260722d"></script>
-    <script defer src="/account/account.js?v=20260722e"></script>
+    <script defer src="/auth-app.js?v=20260722f"></script>
+    <script defer src="/site-shell.js?v=20260722f"></script>
+    <script defer src="/account/account.js?v=20260722f"></script>
 </body>
 </html>

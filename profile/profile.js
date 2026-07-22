@@ -88,7 +88,7 @@ document.addEventListener("DOMContentLoaded", function () {
         var backgroundUrl = card.profile_background_url || "";
         var musicUrl = card.profile_music_url || "";
 
-        window.HollowsideAuth.applySiteTheme(theme, false);
+        window.HollowsideAuth.applySiteTheme(theme, false, card.profile_theme_secondary || "");
         document.body.setAttribute("data-profile-theme", theme);
         document.body.style.setProperty("--profile-background-blur", blur + "px");
         backgroundMedia.style.backgroundImage = backgroundUrl ? 'url("' + backgroundUrl.replace(/"/g, "%22") + '")' : "none";

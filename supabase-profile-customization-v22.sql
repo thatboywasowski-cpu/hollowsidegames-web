@@ -9,17 +9,25 @@ alter table public.profiles
     add column if not exists profile_background_blur smallint not null default 0,
     add column if not exists profile_music_url text not null default '',
     add column if not exists profile_music_path text not null default '',
-    add column if not exists profile_theme text not null default 'black';
+    add column if not exists profile_theme text not null default 'black',
+    add column if not exists profile_theme_secondary text not null default '';
 
 alter table public.profiles
     drop constraint if exists profiles_background_blur_range,
-    drop constraint if exists profiles_theme_allowed;
+    drop constraint if exists profiles_theme_allowed,
+    drop constraint if exists profiles_secondary_theme_allowed;
 
 alter table public.profiles
     add constraint profiles_background_blur_range
         check (profile_background_blur between 0 and 30),
     add constraint profiles_theme_allowed
-        check (profile_theme in ('black', 'red', 'purple', 'white', 'yellow', 'green', 'pink', 'blue', 'cyan'));
+        check (profile_theme in ('black', 'red', 'purple', 'white', 'yellow', 'green', 'pink', 'blue', 'cyan')),
+    add constraint profiles_secondary_theme_allowed
+        check (
+            profile_theme_secondary = ''
+            or profile_theme_secondary in ('black', 'red', 'purple', 'white', 'yellow', 'green', 'pink', 'blue', 'cyan')
+            or profile_theme_secondary ~ '^custom-[0-9a-f]{6}$'
+        );
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
@@ -115,7 +123,8 @@ returns table (
     profile_background_url text,
     profile_background_blur smallint,
     profile_music_url text,
-    profile_theme text
+    profile_theme text,
+    profile_theme_secondary text
 )
 language plpgsql
 security definer
@@ -172,7 +181,8 @@ begin
         p.profile_background_url,
         p.profile_background_blur,
         p.profile_music_url,
-        p.profile_theme
+        p.profile_theme,
+        p.profile_theme_secondary
     from public.profile_cards pc
     join public.profiles p on p.id = pc.id
     where pc.account_id = p_account_id

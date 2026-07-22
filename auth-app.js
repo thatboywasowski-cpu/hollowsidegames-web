@@ -48,6 +48,7 @@
     };
     var siteThemes = Object.keys(siteThemeColors);
     var siteThemeStorageKey = "hollowside-site-theme";
+    var siteSecondaryThemeStorageKey = "hollowside-site-secondary-theme";
 
     function normalizeSiteTheme(theme) {
         var normalized = String(theme || "").trim().toLowerCase();
@@ -63,6 +64,13 @@
             return "#" + normalized.slice(7);
         }
         return siteThemeColors[normalized] || siteThemeColors.black;
+    }
+
+    function normalizeSecondarySiteTheme(theme) {
+        if (!String(theme || "").trim()) {
+            return "";
+        }
+        return normalizeSiteTheme(theme);
     }
 
     function hexToRgb(hex) {
@@ -107,14 +115,30 @@
         }
     }
 
-    function applySiteTheme(theme, persist) {
+    function getStoredSecondarySiteTheme() {
+        try {
+            return normalizeSecondarySiteTheme(window.localStorage.getItem(siteSecondaryThemeStorageKey));
+        } catch (error) {
+            return "";
+        }
+    }
+
+    function applySiteTheme(theme, persist, secondaryTheme) {
         var normalized = normalizeSiteTheme(theme);
+        var normalizedSecondary = normalizeSecondarySiteTheme(
+            secondaryTheme === undefined ? getStoredSecondarySiteTheme() : secondaryTheme
+        );
         var propertyNames = [
             "--site-theme-page-rgb",
             "--site-theme-surface-rgb",
             "--site-theme-surface-strong-rgb",
             "--site-theme-accent-rgb",
             "--site-theme-accent",
+            "--site-theme-outline-rgb",
+            "--site-theme-outline",
+            "--site-theme-secondary-rgb",
+            "--site-theme-secondary",
+            "--site-theme-primary-action",
             "--site-theme-button-text"
         ];
 
@@ -124,6 +148,15 @@
 
         document.body.setAttribute("data-site-theme", normalized.indexOf("custom-") === 0 ? "custom" : normalized);
         document.body.setAttribute("data-site-theme-value", normalized);
+        document.body.classList.toggle("has-secondary-theme", !!normalizedSecondary);
+
+        if (normalizedSecondary) {
+            document.body.setAttribute("data-site-secondary-theme", normalizedSecondary.indexOf("custom-") === 0 ? "custom" : normalizedSecondary);
+            document.body.setAttribute("data-site-secondary-theme-value", normalizedSecondary);
+        } else {
+            document.body.removeAttribute("data-site-secondary-theme");
+            document.body.removeAttribute("data-site-secondary-theme-value");
+        }
 
         if (normalized !== "black") {
             var palette = getThemePalette(normalized);
@@ -132,12 +165,30 @@
             document.body.style.setProperty("--site-theme-surface-strong-rgb", palette.surfaceStrong.join(", "));
             document.body.style.setProperty("--site-theme-accent-rgb", palette.accentRgb.join(", "));
             document.body.style.setProperty("--site-theme-accent", palette.accent);
+            document.body.style.setProperty("--site-theme-primary-action", palette.accent);
+            document.body.style.setProperty("--site-theme-outline-rgb", palette.accentRgb.join(", "));
+            document.body.style.setProperty("--site-theme-outline", palette.accent);
             document.body.style.setProperty("--site-theme-button-text", palette.buttonText);
+        }
+
+        if (normalizedSecondary) {
+            var secondaryPalette = getThemePalette(normalizedSecondary);
+            document.body.style.setProperty("--site-theme-secondary-rgb", secondaryPalette.accentRgb.join(", "));
+            document.body.style.setProperty("--site-theme-secondary", secondaryPalette.accent);
+            document.body.style.setProperty("--site-theme-outline-rgb", secondaryPalette.accentRgb.join(", "));
+            document.body.style.setProperty("--site-theme-outline", secondaryPalette.accent);
+            document.body.style.setProperty("--site-theme-primary-action", getSiteThemeColor(normalized));
+            document.body.style.setProperty("--site-theme-button-text", secondaryPalette.accent);
         }
 
         if (persist !== false) {
             try {
                 window.localStorage.setItem(siteThemeStorageKey, normalized);
+                if (normalizedSecondary) {
+                    window.localStorage.setItem(siteSecondaryThemeStorageKey, normalizedSecondary);
+                } else {
+                    window.localStorage.removeItem(siteSecondaryThemeStorageKey);
+                }
             } catch (error) {
                 return normalized;
             }
@@ -149,6 +200,7 @@
     function clearStoredSiteTheme() {
         try {
             window.localStorage.removeItem(siteThemeStorageKey);
+            window.localStorage.removeItem(siteSecondaryThemeStorageKey);
         } catch (error) {
             return;
         }
@@ -1005,6 +1057,7 @@
         siteThemes: siteThemes,
         siteThemeColors: siteThemeColors,
         normalizeSiteTheme: normalizeSiteTheme,
+        normalizeSecondarySiteTheme: normalizeSecondarySiteTheme,
         getSiteThemeColor: getSiteThemeColor,
         applySiteTheme: applySiteTheme,
         clearStoredSiteTheme: clearStoredSiteTheme
@@ -1012,11 +1065,11 @@
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", function () {
-            applySiteTheme(getStoredSiteTheme(), false);
+            applySiteTheme(getStoredSiteTheme(), false, getStoredSecondarySiteTheme());
             ensureFavicon();
         });
     } else {
-        applySiteTheme(getStoredSiteTheme(), false);
+        applySiteTheme(getStoredSiteTheme(), false, getStoredSecondarySiteTheme());
         ensureFavicon();
     }
 })();

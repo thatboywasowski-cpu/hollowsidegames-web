@@ -265,7 +265,7 @@
 }
 
 .profile-theme-tab.is-active {
-    border-color: rgba(var(--site-theme-accent-rgb), 0.42);
+    border-color: rgba(var(--site-theme-outline-rgb), 0.42);
     background: rgba(var(--site-theme-accent-rgb), 0.14);
     color: var(--text);
     font-weight: 700;
@@ -365,6 +365,122 @@
 
 .profile-rgb-fields input {
     min-width: 0;
+}
+
+.profile-secondary-theme-field {
+    padding-top: 0.2rem;
+}
+
+.profile-secondary-theme-header,
+.profile-secondary-theme-title,
+.profile-secondary-theme-toggle {
+    display: flex;
+    align-items: center;
+}
+
+.profile-secondary-theme-header {
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.profile-secondary-theme-title {
+    gap: 0.6rem;
+}
+
+.profile-secondary-theme-title .account-chip {
+    min-height: 1.8rem;
+    padding: 0.28rem 0.55rem;
+    font-size: 0.72rem;
+}
+
+.profile-secondary-theme-toggle {
+    position: relative;
+    gap: 0.65rem;
+    color: var(--muted);
+    font-size: 0.84rem;
+    cursor: pointer;
+}
+
+.profile-secondary-theme-toggle input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+}
+
+.profile-secondary-toggle-track {
+    position: relative;
+    width: 2.7rem;
+    height: 1.5rem;
+    flex: 0 0 auto;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.profile-secondary-toggle-track::after {
+    content: "";
+    position: absolute;
+    top: 0.2rem;
+    left: 0.2rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background: #ffffff;
+    transition: transform 160ms ease;
+}
+
+.profile-secondary-theme-toggle input:checked + .profile-secondary-toggle-track {
+    border-color: var(--site-theme-outline);
+    background: rgba(var(--site-theme-outline-rgb), 0.32);
+}
+
+.profile-secondary-theme-toggle input:checked + .profile-secondary-toggle-track::after {
+    transform: translateX(1.2rem);
+}
+
+.profile-secondary-theme-toggle input:focus-visible + .profile-secondary-toggle-track {
+    outline: 2px solid rgba(var(--site-theme-outline-rgb), 0.65);
+    outline-offset: 2px;
+}
+
+.profile-secondary-theme-controls {
+    margin-top: 0.75rem;
+}
+
+.profile-secondary-theme-controls[hidden] {
+    display: none;
+}
+
+.profile-secondary-swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(2.25rem, 1fr));
+    gap: 0.55rem;
+}
+
+.profile-secondary-swatch {
+    position: relative;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    justify-self: center;
+    border: 2px solid rgba(255, 255, 255, 0.28);
+    border-radius: 50%;
+    background: var(--swatch);
+    cursor: pointer;
+    transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.profile-secondary-swatch:hover,
+.profile-secondary-swatch:focus-visible {
+    transform: scale(1.08);
+    border-color: rgba(255, 255, 255, 0.72);
+}
+
+.profile-secondary-swatch.is-selected {
+    border-color: #ffffff;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--swatch) 50%, transparent);
 }
 
 .account-button.compact {
@@ -520,6 +636,11 @@
     .profile-rgb-fields {
         grid-column: auto;
     }
+
+    .profile-secondary-theme-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
 }
 
 .profile-stats {
@@ -600,14 +721,14 @@
 .profile-page .site-header-bar,
 .profile-page .account-card,
 .profile-page .composer-card {
-    border-color: rgba(var(--profile-theme-rgb), 0.22);
+    border-color: rgba(var(--profile-outline-rgb), 0.22);
     background: linear-gradient(180deg, rgba(17, 17, 17, 0.88), rgba(7, 7, 7, 0.94));
 }
 
 .profile-page .account-chip,
 .profile-page .profile-stat,
 .profile-page .profile-mini-card {
-    border-color: rgba(var(--profile-theme-rgb), 0.19);
+    border-color: rgba(var(--profile-outline-rgb), 0.19);
 }
 
 .profile-page .profile-stat strong,
@@ -616,7 +737,7 @@
 }
 
 .profile-page .account-button.primary {
-    border-color: rgba(var(--profile-theme-rgb), 0.58);
+    border-color: rgba(var(--profile-outline-rgb), 0.58);
     background: var(--profile-theme-strong);
     color: var(--site-theme-button-text);
 }
@@ -680,7 +801,7 @@
     gap: 0.7rem;
     min-height: 2.75rem;
     padding: 0.45rem 0.65rem;
-    border: 1px solid rgba(var(--profile-theme-rgb), 0.3);
+    border: 1px solid rgba(var(--profile-outline-rgb), 0.3);
     border-radius: var(--radius-sm);
     background: rgba(5, 5, 5, 0.82);
     box-shadow: 0 10px 32px rgba(0, 0, 0, 0.42);
@@ -935,11 +1056,12 @@
 .profile-page[data-site-theme] {
     --profile-theme-rgb: var(--site-theme-accent-rgb);
     --profile-theme-strong: var(--site-theme-accent);
+    --profile-outline-rgb: var(--site-theme-outline-rgb);
 }
 
 body[data-site-theme]:not([data-site-theme="black"]) .account-card,
 body[data-site-theme]:not([data-site-theme="black"]) .account-dialog {
-    border-color: rgba(var(--site-theme-accent-rgb), 0.38) !important;
+    border-color: rgba(var(--site-theme-outline-rgb), 0.38) !important;
     background: rgb(var(--site-theme-surface-rgb)) !important;
 }
 
@@ -950,19 +1072,19 @@ body[data-site-theme]:not([data-site-theme="black"]) .permission-tile,
 body[data-site-theme]:not([data-site-theme="black"]) .filter-chip,
 body[data-site-theme]:not([data-site-theme="black"]) .account-chip,
 body[data-site-theme]:not([data-site-theme="black"]) .account-tab {
-    border-color: rgba(var(--site-theme-accent-rgb), 0.28) !important;
+    border-color: rgba(var(--site-theme-outline-rgb), 0.28) !important;
     background: rgba(var(--site-theme-surface-strong-rgb), 0.82) !important;
 }
 
 body[data-site-theme]:not([data-site-theme="black"]) .account-button.primary,
 body[data-site-theme]:not([data-site-theme="black"]) .account-tab.is-active {
-    border-color: var(--site-theme-accent) !important;
-    background: var(--site-theme-accent) !important;
+    border-color: var(--site-theme-outline) !important;
+    background: var(--site-theme-primary-action) !important;
     color: var(--site-theme-button-text) !important;
 }
 
 body[data-site-theme]:not([data-site-theme="black"]) .profile-audio-controls {
-    border-color: rgba(var(--site-theme-accent-rgb), 0.46);
+    border-color: rgba(var(--site-theme-outline-rgb), 0.46);
     background: rgb(var(--site-theme-surface-strong-rgb));
 }
 

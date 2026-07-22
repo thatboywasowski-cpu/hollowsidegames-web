@@ -30,6 +30,14 @@ document.addEventListener("DOMContentLoaded", function () {
     var customThemeRed = document.getElementById("account-theme-red");
     var customThemeGreen = document.getElementById("account-theme-green");
     var customThemeBlue = document.getElementById("account-theme-blue");
+    var secondaryThemeEnabled = document.getElementById("account-secondary-theme-enabled");
+    var secondaryThemeControls = document.getElementById("account-secondary-theme-controls");
+    var secondaryThemePresets = document.getElementById("account-secondary-theme-presets");
+    var secondaryThemeColor = document.getElementById("account-secondary-theme-color");
+    var secondaryThemeHex = document.getElementById("account-secondary-theme-hex");
+    var secondaryThemeRed = document.getElementById("account-secondary-theme-red");
+    var secondaryThemeGreen = document.getElementById("account-secondary-theme-green");
+    var secondaryThemeBlue = document.getElementById("account-secondary-theme-blue");
     var musicInput = document.getElementById("account-music-input");
     var musicState = document.getElementById("account-music-state");
     var musicRemove = document.getElementById("account-music-remove");
@@ -364,9 +372,72 @@ document.addEventListener("DOMContentLoaded", function () {
         return "custom-" + color.slice(1).toLowerCase();
     }
 
+    function formatThemeName(theme) {
+        return theme.split("-").map(function (word) {
+            return word.charAt(0).toUpperCase() + word.slice(1);
+        }).join(" ");
+    }
+
+    function updateSecondaryPresetSelection(hex) {
+        var normalized = normalizeHexColor(hex).toLowerCase();
+        secondaryThemePresets.querySelectorAll("[data-secondary-theme]").forEach(function (button) {
+            var isSelected = button.getAttribute("data-secondary-color") === normalized;
+            button.classList.toggle("is-selected", isSelected);
+            button.setAttribute("aria-pressed", isSelected ? "true" : "false");
+        });
+    }
+
+    function syncSecondaryThemeControls(hex) {
+        var normalized = normalizeHexColor(hex) || "#FFFFFF";
+        var channels = hexToRgb(normalized);
+        secondaryThemeColor.value = normalized.toLowerCase();
+        secondaryThemeHex.value = normalized;
+        secondaryThemeRed.value = String(channels[0]);
+        secondaryThemeGreen.value = String(channels[1]);
+        secondaryThemeBlue.value = String(channels[2]);
+        updateSecondaryPresetSelection(normalized);
+        return normalized;
+    }
+
+    function getSelectedSecondaryTheme() {
+        if (!secondaryThemeEnabled.checked) {
+            return "";
+        }
+        var color = normalizeHexColor(secondaryThemeHex.value) || normalizeHexColor(secondaryThemeColor.value) || "#FFFFFF";
+        return "custom-" + color.slice(1).toLowerCase();
+    }
+
+    function previewSelectedThemes() {
+        window.HollowsideAuth.applySiteTheme(getSelectedProfileTheme(), false, getSelectedSecondaryTheme());
+    }
+
+    function renderSecondaryThemePresets() {
+        secondaryThemePresets.innerHTML = "";
+        Object.keys(window.HollowsideAuth.siteThemeColors).forEach(function (theme) {
+            var color = window.HollowsideAuth.siteThemeColors[theme];
+            var button = document.createElement("button");
+            var label = formatThemeName(theme);
+            button.type = "button";
+            button.className = "profile-secondary-swatch";
+            button.setAttribute("data-secondary-theme", theme);
+            button.setAttribute("data-secondary-color", color.toLowerCase());
+            button.setAttribute("aria-label", label);
+            button.setAttribute("aria-pressed", "false");
+            button.title = label;
+            button.style.setProperty("--swatch", color);
+            button.addEventListener("click", function () {
+                secondaryThemeEnabled.checked = true;
+                secondaryThemeControls.hidden = false;
+                syncSecondaryThemeControls(color);
+                previewSelectedThemes();
+            });
+            secondaryThemePresets.appendChild(button);
+        });
+    }
+
     function previewCustomTheme() {
         customThemeRadio.checked = true;
-        window.HollowsideAuth.applySiteTheme(getCustomProfileTheme(), false);
+        previewSelectedThemes();
     }
 
     function getSelectedProfileTheme() {
@@ -381,10 +452,11 @@ document.addEventListener("DOMContentLoaded", function () {
         var backgroundUrl = (profile && profile.profile_background_url) || "";
         var blur = Math.max(0, Math.min(30, Number(profile && profile.profile_background_blur) || 0));
         var theme = window.HollowsideAuth.normalizeSiteTheme((profile && profile.profile_theme) || "black");
+        var secondaryTheme = window.HollowsideAuth.normalizeSecondarySiteTheme(profile && profile.profile_theme_secondary);
         var musicUrl = (profile && profile.profile_music_url) || "";
         var isCustomTheme = theme.indexOf("custom-") === 0;
 
-        window.HollowsideAuth.applySiteTheme(theme, true);
+        window.HollowsideAuth.applySiteTheme(theme, true, secondaryTheme);
 
         backgroundBlurInput.value = String(blur);
         backgroundBlurValue.textContent = blur + " px";
@@ -409,6 +481,10 @@ document.addEventListener("DOMContentLoaded", function () {
             var selectedPanel = selectedThemeInput && selectedThemeInput.closest("[data-theme-panel]");
             setThemePanel(selectedPanel ? selectedPanel.getAttribute("data-theme-panel") : "basic");
         }
+
+        secondaryThemeEnabled.checked = !!secondaryTheme;
+        secondaryThemeControls.hidden = !secondaryTheme;
+        syncSecondaryThemeControls(secondaryTheme ? window.HollowsideAuth.getSiteThemeColor(secondaryTheme) : "#FFFFFF");
     }
 
     function fillForm(user, profile) {
@@ -749,7 +825,11 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         currentProfile = updateResult.data;
-        window.HollowsideAuth.applySiteTheme(currentProfile.profile_theme || "black", true);
+        window.HollowsideAuth.applySiteTheme(
+            currentProfile.profile_theme || "black",
+            true,
+            currentProfile.profile_theme_secondary || ""
+        );
         await refreshAccountContext();
         fillForm(currentUser, currentProfile);
         emitProfileUpdate(currentProfile);
@@ -863,7 +943,7 @@ document.addEventListener("DOMContentLoaded", function () {
     themeInputs.forEach(function (input) {
         input.addEventListener("change", function () {
             if (input.checked) {
-                window.HollowsideAuth.applySiteTheme(input.value === "custom" ? getCustomProfileTheme() : input.value, false);
+                previewSelectedThemes();
             }
         });
     });
@@ -913,6 +993,44 @@ document.addEventListener("DOMContentLoaded", function () {
             var hex = rgbToHex(customThemeRed.value, customThemeGreen.value, customThemeBlue.value);
             syncCustomThemeControls(hex);
             previewCustomTheme();
+        });
+
+        input.addEventListener("blur", function () {
+            input.value = String(clampColorChannel(input.value));
+        });
+    });
+
+    secondaryThemeEnabled.addEventListener("change", function () {
+        secondaryThemeControls.hidden = !secondaryThemeEnabled.checked;
+        previewSelectedThemes();
+    });
+
+    secondaryThemeColor.addEventListener("input", function () {
+        secondaryThemeEnabled.checked = true;
+        secondaryThemeControls.hidden = false;
+        syncSecondaryThemeControls(secondaryThemeColor.value);
+        previewSelectedThemes();
+    });
+
+    secondaryThemeHex.addEventListener("input", function () {
+        var normalized = normalizeHexColor(secondaryThemeHex.value);
+        if (normalized) {
+            secondaryThemeEnabled.checked = true;
+            syncSecondaryThemeControls(normalized);
+            previewSelectedThemes();
+        }
+    });
+
+    secondaryThemeHex.addEventListener("blur", function () {
+        syncSecondaryThemeControls(secondaryThemeHex.value || secondaryThemeColor.value);
+    });
+
+    [secondaryThemeRed, secondaryThemeGreen, secondaryThemeBlue].forEach(function (input) {
+        input.addEventListener("input", function () {
+            var hex = rgbToHex(secondaryThemeRed.value, secondaryThemeGreen.value, secondaryThemeBlue.value);
+            secondaryThemeEnabled.checked = true;
+            syncSecondaryThemeControls(hex);
+            previewSelectedThemes();
         });
 
         input.addEventListener("blur", function () {
@@ -1118,6 +1236,7 @@ document.addEventListener("DOMContentLoaded", function () {
         var locationValue = locationInput.value.trim();
         var backgroundBlur = Math.max(0, Math.min(30, Number(backgroundBlurInput.value) || 0));
         var profileTheme = getSelectedProfileTheme();
+        var profileThemeSecondary = getSelectedSecondaryTheme();
 
         if (!usernameResult.ok) {
             window.HollowsideAuth.setStatus(status, usernameResult.message, "error");
@@ -1139,7 +1258,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     website_url: websiteUrl,
                     location: locationValue,
                     profile_background_blur: backgroundBlur,
-                    profile_theme: profileTheme
+                    profile_theme: profileTheme,
+                    profile_theme_secondary: profileThemeSecondary
                 })
                 .eq("id", currentUser.id)
                 .select("*")
@@ -1536,5 +1656,6 @@ document.addEventListener("DOMContentLoaded", function () {
         window.location.href = "/";
     });
 
+    renderSecondaryThemePresets();
     loadAccount();
 });
