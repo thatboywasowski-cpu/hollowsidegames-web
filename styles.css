@@ -14,6 +14,11 @@
     --radius-md: 18px;
     --radius-sm: 12px;
     --font: "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
+    --site-theme-page-rgb: 5, 5, 5;
+    --site-theme-surface-rgb: 18, 18, 18;
+    --site-theme-surface-strong-rgb: 25, 25, 25;
+    --site-theme-accent-rgb: 255, 255, 255;
+    --site-theme-accent: #ffffff;
 }
 
 * {
@@ -2167,4 +2172,130 @@ select option:disabled {
 .post-action.is-danger {
     border-color: rgba(255, 122, 122, 0.28);
     background: rgba(255, 122, 122, 0.08);
+}
+
+body[data-site-theme="red"] {
+    --site-theme-page-rgb: 34, 7, 11;
+    --site-theme-surface-rgb: 52, 12, 18;
+    --site-theme-surface-strong-rgb: 65, 16, 23;
+    --site-theme-accent-rgb: 239, 100, 111;
+    --site-theme-accent: #ef646f;
+}
+
+body[data-site-theme="purple"] {
+    --site-theme-page-rgb: 25, 12, 40;
+    --site-theme-surface-rgb: 43, 22, 65;
+    --site-theme-surface-strong-rgb: 55, 28, 82;
+    --site-theme-accent-rgb: 185, 132, 239;
+    --site-theme-accent: #b984ef;
+}
+
+body[data-site-theme="white"] {
+    --site-theme-page-rgb: 44, 44, 44;
+    --site-theme-surface-rgb: 66, 66, 66;
+    --site-theme-surface-strong-rgb: 80, 80, 80;
+    --site-theme-accent-rgb: 245, 245, 245;
+    --site-theme-accent: #f5f5f5;
+}
+
+body[data-site-theme="yellow"] {
+    --site-theme-page-rgb: 37, 31, 6;
+    --site-theme-surface-rgb: 59, 49, 9;
+    --site-theme-surface-strong-rgb: 73, 61, 12;
+    --site-theme-accent-rgb: 239, 207, 91;
+    --site-theme-accent: #efcf5b;
+}
+
+body[data-site-theme="green"] {
+    --site-theme-page-rgb: 7, 31, 19;
+    --site-theme-surface-rgb: 11, 50, 31;
+    --site-theme-surface-strong-rgb: 15, 64, 40;
+    --site-theme-accent-rgb: 105, 210, 149;
+    --site-theme-accent: #69d295;
+}
+
+body[data-site-theme="pink"] {
+    --site-theme-page-rgb: 39, 12, 27;
+    --site-theme-surface-rgb: 62, 20, 43;
+    --site-theme-surface-strong-rgb: 77, 25, 53;
+    --site-theme-accent-rgb: 239, 143, 190;
+    --site-theme-accent: #ef8fbe;
+}
+
+body[data-site-theme="blue"] {
+    --site-theme-page-rgb: 8, 20, 41;
+    --site-theme-surface-rgb: 13, 34, 65;
+    --site-theme-surface-strong-rgb: 17, 43, 81;
+    --site-theme-accent-rgb: 111, 160, 230;
+    --site-theme-accent: #6fa0e6;
+}
+
+body[data-site-theme="cyan"] {
+    --site-theme-page-rgb: 5, 31, 34;
+    --site-theme-surface-rgb: 9, 50, 54;
+    --site-theme-surface-strong-rgb: 12, 63, 68;
+    --site-theme-accent-rgb: 104, 215, 222;
+    --site-theme-accent: #68d7de;
+}
+
+body[data-site-theme]:not([data-site-theme="black"]) {
+    --line: rgba(var(--site-theme-accent-rgb), 0.3);
+    --line-strong: rgba(var(--site-theme-accent-rgb), 0.48);
+    --accent: var(--site-theme-accent);
+    --accent-soft: rgba(var(--site-theme-accent-rgb), 0.16);
+    --panel: rgba(var(--site-theme-surface-rgb), 0.94);
+    --panel-strong: rgba(var(--site-theme-surface-strong-rgb), 0.97);
+    background: rgb(var(--site-theme-page-rgb));
+    background-color: rgb(var(--site-theme-page-rgb));
+}
+
+body[data-site-theme]:not([data-site-theme="black"]) .page-shell {
+    background: rgb(var(--site-theme-page-rgb)) !important;
+    background-color: rgb(var(--site-theme-page-rgb)) !important;
+}
+
+body[data-site-theme]:not([data-site-theme="black"]) .page-shell::before,
+body[data-site-theme]:not([data-site-theme="black"]) .page-shell::after {
+    background: rgba(var(--site-theme-accent-rgb), 0.08);
+}
+
+body[data-site-theme]:not([data-site-theme="black"]) .site-header-bar,
+body[data-site-theme]:not([data-site-theme="black"]) .hero-card,
+body[data-site-theme]:not([data-site-theme="black"]) .content-card,
+body[data-site-theme]:not([data-site-theme="black"]) .mini-card,
+body[data-site-theme]:not([data-site-theme="black"]) .news-card,
+body[data-site-theme]:not([data-site-theme="black"]) .post-card,
+body[data-site-theme]:not([data-site-theme="black"]) .download-card,
+body[data-site-theme]:not([data-site-theme="black"]) .composer-card,
+body[data-site-theme]:not([data-site-theme="black"]) .news-featured-card,
+body[data-site-theme]:not([data-site-theme="black"]) .news-summary-card,
+body[data-site-theme]:not([data-site-theme="black"]) .news-body-card,
+body[data-site-theme]:not([data-site-theme="black"]) .nav-account-menu,
+body[data-site-theme]:not([data-site-theme="black"]) .site-dialog,
+body[data-site-theme]:not([data-site-theme="black"]) .media-editor-card {
+    border-color: rgba(var(--site-theme-accent-rgb), 0.36) !important;
+    background: rgb(var(--site-theme-surface-rgb)) !important;
+}
+
+body[data-site-theme]:not([data-site-theme="black"]) .comment-card,
+body[data-site-theme]:not([data-site-theme="black"]) .post-edit-form,
+body[data-site-theme]:not([data-site-theme="black"]) .nav-menu-link,
+body[data-site-theme]:not([data-site-theme="black"]) .nav-menu-button {
+    border-color: rgba(var(--site-theme-accent-rgb), 0.24) !important;
+    background: rgba(0, 0, 0, 0.24) !important;
+}
+
+body[data-site-theme]:not([data-site-theme="black"]) input,
+body[data-site-theme]:not([data-site-theme="black"]) textarea,
+body[data-site-theme]:not([data-site-theme="black"]) select {
+    border-color: rgba(var(--site-theme-accent-rgb), 0.28) !important;
+    background-color: rgba(0, 0, 0, 0.28) !important;
+}
+
+body[data-site-theme]:not([data-site-theme="black"]) .button.primary,
+body[data-site-theme]:not([data-site-theme="black"]) .auth-button,
+body[data-site-theme]:not([data-site-theme="black"]) .site-dialog-button {
+    border-color: var(--site-theme-accent) !important;
+    background: var(--site-theme-accent) !important;
+    color: #080808 !important;
 }

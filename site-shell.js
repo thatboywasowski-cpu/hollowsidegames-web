@@ -155,6 +155,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function showGuestState() {
+        window.HollowsideAuth.clearStoredSiteTheme();
+        window.HollowsideAuth.applySiteTheme("black", false);
         guestLinks.forEach(function (link) {
             link.classList.remove("is-hidden");
         });
@@ -388,6 +390,10 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     async function renderUserState(user, profile, accountContext, realAccountContext) {
+        if (!document.body.classList.contains("profile-page") && profile) {
+            window.HollowsideAuth.applySiteTheme(profile.profile_theme || "black", true);
+        }
+
         guestLinks.forEach(function (link) {
             link.classList.add("is-hidden");
         });

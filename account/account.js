@@ -312,6 +312,8 @@ document.addEventListener("DOMContentLoaded", function () {
         var theme = (profile && profile.profile_theme) || "black";
         var musicUrl = (profile && profile.profile_music_url) || "";
 
+        window.HollowsideAuth.applySiteTheme(theme, true);
+
         backgroundBlurInput.value = String(blur);
         backgroundBlurValue.textContent = blur + " px";
         backgroundPreview.style.setProperty("--preview-blur", blur + "px");
@@ -666,6 +668,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         currentProfile = updateResult.data;
+        window.HollowsideAuth.applySiteTheme(currentProfile.profile_theme || "black", true);
         await refreshAccountContext();
         fillForm(currentUser, currentProfile);
         emitProfileUpdate(currentProfile);
@@ -774,6 +777,14 @@ document.addEventListener("DOMContentLoaded", function () {
         var blur = Math.max(0, Math.min(30, Number(backgroundBlurInput.value) || 0));
         backgroundBlurValue.textContent = blur + " px";
         backgroundPreview.style.setProperty("--preview-blur", blur + "px");
+    });
+
+    themeInputs.forEach(function (input) {
+        input.addEventListener("change", function () {
+            if (input.checked) {
+                window.HollowsideAuth.applySiteTheme(input.value, false);
+            }
+        });
     });
 
     backgroundInput.addEventListener("change", function () {

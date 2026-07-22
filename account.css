@@ -450,67 +450,7 @@
 }
 
 .profile-page {
-    --profile-theme-rgb: 92, 92, 92;
-    --profile-theme-strong: #f3f3f3;
     --profile-background-blur: 0px;
-}
-
-.profile-page[data-profile-theme="red"] {
-    --profile-theme-rgb: 197, 59, 69;
-    --profile-theme-strong: #ef747c;
-}
-
-.profile-page[data-profile-theme="purple"] {
-    --profile-theme-rgb: 146, 85, 216;
-    --profile-theme-strong: #b98aef;
-}
-
-.profile-page[data-profile-theme="white"] {
-    --profile-theme-rgb: 238, 238, 238;
-    --profile-theme-strong: #ffffff;
-}
-
-.profile-page[data-profile-theme="yellow"] {
-    --profile-theme-rgb: 224, 189, 62;
-    --profile-theme-strong: #f0d76f;
-}
-
-.profile-page[data-profile-theme="green"] {
-    --profile-theme-rgb: 69, 170, 114;
-    --profile-theme-strong: #74d39d;
-}
-
-.profile-page[data-profile-theme="pink"] {
-    --profile-theme-rgb: 223, 109, 164;
-    --profile-theme-strong: #f194c1;
-}
-
-.profile-page[data-profile-theme="blue"] {
-    --profile-theme-rgb: 66, 122, 203;
-    --profile-theme-strong: #75a4e8;
-}
-
-.profile-page[data-profile-theme="cyan"] {
-    --profile-theme-rgb: 56, 186, 196;
-    --profile-theme-strong: #73d9df;
-}
-
-.profile-page .page-shell {
-    background:
-        linear-gradient(180deg, rgba(var(--profile-theme-rgb), 0.09), rgba(5, 5, 5, 0.9) 42%),
-        #050505;
-}
-
-.profile-page[data-profile-theme="white"] .page-shell {
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(18, 18, 18, 0.92) 48%),
-        #161616;
-}
-
-.profile-page[data-profile-theme="white"] .site-header-bar,
-.profile-page[data-profile-theme="white"] .account-card,
-.profile-page[data-profile-theme="white"] .composer-card {
-    background: linear-gradient(180deg, rgba(40, 40, 40, 0.9), rgba(15, 15, 15, 0.95));
 }
 
 .profile-background-media {
@@ -880,4 +820,62 @@
 
 .account-dialog h2 {
     margin: 0;
+}
+
+.profile-page[data-site-theme] {
+    --profile-theme-rgb: var(--site-theme-accent-rgb);
+    --profile-theme-strong: var(--site-theme-accent);
+}
+
+body[data-site-theme]:not([data-site-theme="black"]) .account-card,
+body[data-site-theme]:not([data-site-theme="black"]) .account-dialog {
+    border-color: rgba(var(--site-theme-accent-rgb), 0.38) !important;
+    background: rgb(var(--site-theme-surface-rgb)) !important;
+}
+
+body[data-site-theme]:not([data-site-theme="black"]) .profile-mini-card,
+body[data-site-theme]:not([data-site-theme="black"]) .profile-stat,
+body[data-site-theme]:not([data-site-theme="black"]) .account-meta-item,
+body[data-site-theme]:not([data-site-theme="black"]) .permission-tile,
+body[data-site-theme]:not([data-site-theme="black"]) .filter-chip,
+body[data-site-theme]:not([data-site-theme="black"]) .account-chip,
+body[data-site-theme]:not([data-site-theme="black"]) .account-tab {
+    border-color: rgba(var(--site-theme-accent-rgb), 0.28) !important;
+    background: rgba(var(--site-theme-surface-strong-rgb), 0.82) !important;
+}
+
+body[data-site-theme]:not([data-site-theme="black"]) .account-button.primary,
+body[data-site-theme]:not([data-site-theme="black"]) .account-tab.is-active {
+    border-color: var(--site-theme-accent) !important;
+    background: var(--site-theme-accent) !important;
+    color: #080808 !important;
+}
+
+body[data-site-theme]:not([data-site-theme="black"]) .profile-audio-controls {
+    border-color: rgba(var(--site-theme-accent-rgb), 0.46);
+    background: rgb(var(--site-theme-surface-strong-rgb));
+}
+
+.profile-entry-gate button {
+    outline: none;
+    text-shadow: none;
+}
+
+.profile-audio-controls {
+    top: calc(1rem + env(safe-area-inset-top));
+    left: calc(1rem + env(safe-area-inset-left));
+    max-width: calc(100vw - 2rem - env(safe-area-inset-left) - env(safe-area-inset-right));
+}
+
+@media (max-width: 1550px) {
+    .profile-page.has-profile-audio .site-header {
+        padding-top: calc(4.75rem + env(safe-area-inset-top));
+    }
+}
+
+@media (max-width: 420px) {
+    .profile-audio-controls {
+        grid-template-columns: auto minmax(5rem, 1fr);
+        width: calc(100vw - 2rem - env(safe-area-inset-left) - env(safe-area-inset-right));
+    }
 }

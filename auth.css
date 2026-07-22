@@ -346,3 +346,21 @@
     opacity: 0.7;
     pointer-events: none;
 }
+
+body[data-site-theme]:not([data-site-theme="black"]) .auth-card {
+    border-color: rgba(var(--site-theme-accent-rgb), 0.38) !important;
+    background: rgb(var(--site-theme-surface-rgb)) !important;
+}
+
+body[data-site-theme]:not([data-site-theme="black"]) .social-button,
+body[data-site-theme]:not([data-site-theme="black"]) .auth-consent,
+body[data-site-theme]:not([data-site-theme="black"]) .auth-status[data-state="info"] {
+    border-color: rgba(var(--site-theme-accent-rgb), 0.28) !important;
+    background: rgba(var(--site-theme-surface-strong-rgb), 0.82) !important;
+}
+
+body[data-site-theme]:not([data-site-theme="black"]) .auth-button {
+    border-color: var(--site-theme-accent) !important;
+    background: var(--site-theme-accent) !important;
+    color: #080808 !important;
+}

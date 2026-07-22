@@ -1,4 +1,42 @@
 (function () {
+    var siteThemes = ["black", "red", "purple", "white", "yellow", "green", "pink", "blue", "cyan"];
+    var siteThemeStorageKey = "hollowside-site-theme";
+
+    function normalizeSiteTheme(theme) {
+        return siteThemes.indexOf(theme) !== -1 ? theme : "black";
+    }
+
+    function getStoredSiteTheme() {
+        try {
+            return normalizeSiteTheme(window.localStorage.getItem(siteThemeStorageKey));
+        } catch (error) {
+            return "black";
+        }
+    }
+
+    function applySiteTheme(theme, persist) {
+        var normalized = normalizeSiteTheme(theme);
+        document.body.setAttribute("data-site-theme", normalized);
+
+        if (persist !== false) {
+            try {
+                window.localStorage.setItem(siteThemeStorageKey, normalized);
+            } catch (error) {
+                return normalized;
+            }
+        }
+
+        return normalized;
+    }
+
+    function clearStoredSiteTheme() {
+        try {
+            window.localStorage.removeItem(siteThemeStorageKey);
+        } catch (error) {
+            return;
+        }
+    }
+
     function readConfig() {
         return {
             url: window.HOLLOWSIDE_SUPABASE_URL || "",
@@ -846,14 +884,19 @@
         openImageViewer: openImageViewer,
         touchActivity: touchActivity,
         normalizeRedirectPath: normalizeRedirectPath,
-        startOAuthSignIn: startOAuthSignIn
+        startOAuthSignIn: startOAuthSignIn,
+        siteThemes: siteThemes,
+        applySiteTheme: applySiteTheme,
+        clearStoredSiteTheme: clearStoredSiteTheme
     };
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", function () {
+            applySiteTheme(getStoredSiteTheme(), false);
             ensureFavicon();
         });
     } else {
+        applySiteTheme(getStoredSiteTheme(), false);
         ensureFavicon();
     }
 })();
