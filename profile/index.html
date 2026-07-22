@@ -9,8 +9,9 @@
     <link rel="stylesheet" href="/auth.css">
     <link rel="stylesheet" href="/account.css">
 </head>
-<body>
+<body class="profile-page" data-profile-theme="black">
     <div class="page-shell">
+        <div class="profile-background-media" id="profile-background-media" aria-hidden="true"></div>
         <div class="dust-layer" aria-hidden="true"></div>
 
         <header class="site-header">
@@ -131,6 +132,20 @@
             </section>
         </main>
     </div>
+
+    <div class="profile-audio-controls" id="profile-audio-controls" hidden>
+        <button type="button" id="profile-audio-toggle" aria-label="Mute profile music">Mute</button>
+        <label class="visually-hidden" for="profile-audio-volume">Profile music volume</label>
+        <input id="profile-audio-volume" type="range" min="0" max="1" step="0.05" value="0.5">
+    </div>
+
+    <div class="profile-entry-gate" id="profile-entry-gate" hidden>
+        <button type="button" id="profile-entry-button">
+            <span id="profile-entry-copy">Click to enter this profile</span>
+        </button>
+    </div>
+
+    <audio id="profile-audio" preload="metadata" loop></audio>
 
     <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="/supabase-config.js"></script>

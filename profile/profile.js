@@ -24,6 +24,14 @@ document.addEventListener("DOMContentLoaded", function () {
     var postMedia = document.getElementById("profile-post-media");
     var postCopy = document.getElementById("profile-post-copy");
     var postFeed = document.getElementById("profile-post-feed");
+    var backgroundMedia = document.getElementById("profile-background-media");
+    var audio = document.getElementById("profile-audio");
+    var audioControls = document.getElementById("profile-audio-controls");
+    var audioToggle = document.getElementById("profile-audio-toggle");
+    var audioVolume = document.getElementById("profile-audio-volume");
+    var entryGate = document.getElementById("profile-entry-gate");
+    var entryButton = document.getElementById("profile-entry-button");
+    var entryCopy = document.getElementById("profile-entry-copy");
 
     if (!window.HollowsideAuth.isConfigured()) {
         window.HollowsideAuth.setStatus(status, "Supabase is not connected yet.", "error");
@@ -39,6 +47,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var viewerContext = null;
     var profileCard = null;
     var replyingByPost = {};
+    var allowedProfileThemes = ["black", "red", "purple", "white", "yellow", "green", "pink", "blue", "cyan"];
 
     function escapeHtml(value) {
         return window.HollowsideAuth.escapeHtml(value);
@@ -55,6 +64,122 @@ document.addEventListener("DOMContentLoaded", function () {
             avatar.textContent = window.HollowsideAuth.getInitials(card, null);
         }
     }
+
+    function getSavedVolume() {
+        try {
+            var stored = window.localStorage.getItem("hollowside-profile-volume");
+            if (stored === null) {
+                return 0.5;
+            }
+            var saved = Number(stored);
+            return Number.isFinite(saved) ? Math.max(0, Math.min(1, saved)) : 0.5;
+        } catch (error) {
+            return 0.5;
+        }
+    }
+
+    function syncAudioButton() {
+        audioToggle.textContent = audio.muted || audio.volume === 0 ? "Unmute" : "Mute";
+        audioToggle.setAttribute("aria-label", audio.muted || audio.volume === 0 ? "Unmute profile music" : "Mute profile music");
+    }
+
+    function positionAudioControls() {
+        var header = document.querySelector(".site-header");
+        var top = header ? Math.max(16, Math.round(header.getBoundingClientRect().bottom + 12)) : 16;
+        var left = header ? Math.max(16, Math.round(header.getBoundingClientRect().left)) : 16;
+        audioControls.style.top = top + "px";
+        audioControls.style.left = left + "px";
+    }
+
+    function applyProfileCustomization(card) {
+        var theme = allowedProfileThemes.indexOf(card.profile_theme) !== -1 ? card.profile_theme : "black";
+        var blur = Math.max(0, Math.min(30, Number(card.profile_background_blur) || 0));
+        var backgroundUrl = card.profile_background_url || "";
+        var musicUrl = card.profile_music_url || "";
+
+        document.body.setAttribute("data-profile-theme", theme);
+        document.body.style.setProperty("--profile-background-blur", blur + "px");
+        backgroundMedia.style.backgroundImage = backgroundUrl ? 'url("' + backgroundUrl.replace(/"/g, "%22") + '")' : "none";
+        backgroundMedia.classList.toggle("has-image", !!backgroundUrl);
+
+        if (!musicUrl) {
+            audio.removeAttribute("src");
+            audioControls.hidden = true;
+            entryGate.hidden = true;
+            document.body.classList.remove("profile-entry-locked");
+            return;
+        }
+
+        audio.src = musicUrl;
+        audio.volume = getSavedVolume();
+        audioVolume.value = String(audio.volume);
+        audio.muted = false;
+        syncAudioButton();
+        entryCopy.textContent = "Click to enter " + card.display_name + "'s profile";
+        entryGate.hidden = false;
+        entryGate.classList.remove("is-leaving");
+        audioControls.hidden = true;
+        document.body.classList.add("profile-entry-locked");
+        entryButton.focus();
+    }
+
+    entryButton.addEventListener("click", function () {
+        entryGate.classList.add("is-leaving");
+        document.body.classList.remove("profile-entry-locked");
+        positionAudioControls();
+        audioControls.hidden = false;
+
+        var playResult = audio.play();
+        if (playResult && typeof playResult.catch === "function") {
+            playResult.catch(function () {
+                audio.muted = true;
+                syncAudioButton();
+            });
+        }
+
+        window.setTimeout(function () {
+            entryGate.hidden = true;
+            entryGate.classList.remove("is-leaving");
+        }, 700);
+    });
+
+    audioToggle.addEventListener("click", function () {
+        var shouldUnmute = audio.muted || audio.volume === 0;
+        audio.muted = !shouldUnmute;
+
+        if (shouldUnmute && audio.volume === 0) {
+            audio.volume = 0.5;
+            audioVolume.value = "0.5";
+        }
+
+        if (shouldUnmute && audio.paused) {
+            var resumeResult = audio.play();
+            if (resumeResult && typeof resumeResult.catch === "function") {
+                resumeResult.catch(function () {
+                    audio.muted = true;
+                    syncAudioButton();
+                });
+            }
+        }
+        syncAudioButton();
+    });
+
+    audioVolume.addEventListener("input", function () {
+        audio.volume = Math.max(0, Math.min(1, Number(audioVolume.value) || 0));
+        audio.muted = audio.volume === 0;
+        syncAudioButton();
+        try {
+            window.localStorage.setItem("hollowside-profile-volume", String(audio.volume));
+        } catch (error) {
+            return;
+        }
+    });
+
+    window.addEventListener("resize", function () {
+        if (!audioControls.hidden) {
+            positionAudioControls();
+        }
+    });
 
     function renderConnectionList(target, items) {
         if (!items.length) {
@@ -1056,6 +1181,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             document.title = profileCard.display_name + " | Hollowside Games";
+            applyProfileCustomization(profileCard);
             setAvatar(profileCard);
             displayName.textContent = profileCard.display_name;
             username.textContent = "@" + profileCard.username;

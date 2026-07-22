@@ -113,6 +113,58 @@
                                     </div>
                                 </div>
 
+                                <section class="profile-customization" aria-labelledby="profile-customization-title">
+                                    <div class="section-header">
+                                        <div>
+                                            <h3 id="profile-customization-title">Profile Appearance</h3>
+                                            <p>Customize the atmosphere visitors see and hear on your public profile.</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="profile-background-preview" id="account-background-preview">
+                                        <span id="account-background-preview-copy">No background selected</span>
+                                    </div>
+
+                                    <div class="account-form-grid">
+                                        <div class="field">
+                                            <label for="account-background-input">Background Picture</label>
+                                            <input id="account-background-input" type="file" accept="image/png,image/jpeg,image/webp">
+                                            <p class="file-hint" id="account-background-state">PNG, JPEG, or WebP up to 20 MB.</p>
+                                            <button class="account-button compact" id="account-background-remove" type="button" hidden>Remove Background</button>
+                                        </div>
+
+                                        <div class="field">
+                                            <div class="range-label">
+                                                <label for="account-background-blur">Background Blur</label>
+                                                <output id="account-background-blur-value" for="account-background-blur">0 px</output>
+                                            </div>
+                                            <input class="profile-range" id="account-background-blur" type="range" min="0" max="30" step="1" value="0">
+                                        </div>
+                                    </div>
+
+                                    <div class="field">
+                                        <label>Profile Color</label>
+                                        <div class="profile-theme-grid" id="account-theme-grid" role="radiogroup" aria-label="Profile color">
+                                            <label class="profile-theme-option" style="--swatch: #080808"><input type="radio" name="profile-theme" value="black" checked><span class="profile-theme-swatch"></span><span>Black</span></label>
+                                            <label class="profile-theme-option" style="--swatch: #c53b45"><input type="radio" name="profile-theme" value="red"><span class="profile-theme-swatch"></span><span>Red</span></label>
+                                            <label class="profile-theme-option" style="--swatch: #9255d8"><input type="radio" name="profile-theme" value="purple"><span class="profile-theme-swatch"></span><span>Purple</span></label>
+                                            <label class="profile-theme-option" style="--swatch: #f1f1f1"><input type="radio" name="profile-theme" value="white"><span class="profile-theme-swatch"></span><span>White</span></label>
+                                            <label class="profile-theme-option" style="--swatch: #e0bd3e"><input type="radio" name="profile-theme" value="yellow"><span class="profile-theme-swatch"></span><span>Yellow</span></label>
+                                            <label class="profile-theme-option" style="--swatch: #45aa72"><input type="radio" name="profile-theme" value="green"><span class="profile-theme-swatch"></span><span>Green</span></label>
+                                            <label class="profile-theme-option" style="--swatch: #df6da4"><input type="radio" name="profile-theme" value="pink"><span class="profile-theme-swatch"></span><span>Pink</span></label>
+                                            <label class="profile-theme-option" style="--swatch: #427acb"><input type="radio" name="profile-theme" value="blue"><span class="profile-theme-swatch"></span><span>Blue</span></label>
+                                            <label class="profile-theme-option" style="--swatch: #38bac4"><input type="radio" name="profile-theme" value="cyan"><span class="profile-theme-swatch"></span><span>Cyan</span></label>
+                                        </div>
+                                    </div>
+
+                                    <div class="field">
+                                        <label for="account-music-input">Profile Music</label>
+                                        <input id="account-music-input" type="file" accept=".mp3,.ogg,.wav,.m4a,.mp4,.aac,.webm,audio/*">
+                                        <p class="file-hint" id="account-music-state">MP3, OGG, WAV, M4A, AAC, or WebM up to 50 MB.</p>
+                                        <button class="account-button compact" id="account-music-remove" type="button" hidden>Remove Music</button>
+                                    </div>
+                                </section>
+
                                 <div class="account-actions">
                                     <button class="account-button primary" type="submit">Save Profile</button>
                                 </div>

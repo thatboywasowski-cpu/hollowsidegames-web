@@ -13,6 +13,17 @@ document.addEventListener("DOMContentLoaded", function () {
     var bioInput = document.getElementById("account-bio");
     var websiteInput = document.getElementById("account-website");
     var locationInput = document.getElementById("account-location");
+    var backgroundInput = document.getElementById("account-background-input");
+    var backgroundPreview = document.getElementById("account-background-preview");
+    var backgroundPreviewCopy = document.getElementById("account-background-preview-copy");
+    var backgroundState = document.getElementById("account-background-state");
+    var backgroundRemove = document.getElementById("account-background-remove");
+    var backgroundBlurInput = document.getElementById("account-background-blur");
+    var backgroundBlurValue = document.getElementById("account-background-blur-value");
+    var themeInputs = document.querySelectorAll('input[name="profile-theme"]');
+    var musicInput = document.getElementById("account-music-input");
+    var musicState = document.getElementById("account-music-state");
+    var musicRemove = document.getElementById("account-music-remove");
     var passwordInput = document.getElementById("account-new-password");
     var confirmPasswordInput = document.getElementById("account-confirm-password");
     var previewName = document.getElementById("account-preview-name");
@@ -290,6 +301,33 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    function getSelectedProfileTheme() {
+        var selected = document.querySelector('input[name="profile-theme"]:checked');
+        return selected ? selected.value : "black";
+    }
+
+    function renderCustomizationSettings(profile) {
+        var backgroundUrl = (profile && profile.profile_background_url) || "";
+        var blur = Math.max(0, Math.min(30, Number(profile && profile.profile_background_blur) || 0));
+        var theme = (profile && profile.profile_theme) || "black";
+        var musicUrl = (profile && profile.profile_music_url) || "";
+
+        backgroundBlurInput.value = String(blur);
+        backgroundBlurValue.textContent = blur + " px";
+        backgroundPreview.style.setProperty("--preview-blur", blur + "px");
+        backgroundPreview.classList.toggle("has-image", !!backgroundUrl);
+        backgroundPreview.style.setProperty("--preview-image", backgroundUrl ? 'url("' + backgroundUrl.replace(/"/g, "%22") + '")' : "none");
+        backgroundPreviewCopy.textContent = backgroundUrl ? "Background preview" : "No background selected";
+        backgroundState.textContent = backgroundUrl ? "Background image active." : "PNG, JPEG, or WebP up to 20 MB.";
+        backgroundRemove.hidden = !backgroundUrl;
+        musicState.textContent = musicUrl ? "Profile music active." : "MP3, OGG, WAV, M4A, AAC, or WebM up to 50 MB.";
+        musicRemove.hidden = !musicUrl;
+
+        themeInputs.forEach(function (input) {
+            input.checked = input.value === theme;
+        });
+    }
+
     function fillForm(user, profile) {
         currentProfile = profile;
         displayNameInput.value = (profile && profile.display_name) || window.HollowsideAuth.fallbackDisplayName(user);
@@ -297,6 +335,7 @@ document.addEventListener("DOMContentLoaded", function () {
         bioInput.value = (profile && profile.bio) || "";
         websiteInput.value = (profile && profile.website_url) || "";
         locationInput.value = (profile && profile.location) || "";
+        renderCustomizationSettings(profile);
         setReadOnlyMeta(user, profile);
     }
 
@@ -614,6 +653,41 @@ document.addEventListener("DOMContentLoaded", function () {
         loadModerationData();
     }
 
+    async function updateCurrentProfile(patch, successMessage) {
+        var updateResult = await supabase
+            .from("profiles")
+            .update(patch)
+            .eq("id", currentUser.id)
+            .select("*")
+            .single();
+
+        if (updateResult.error) {
+            throw updateResult.error;
+        }
+
+        currentProfile = updateResult.data;
+        await refreshAccountContext();
+        fillForm(currentUser, currentProfile);
+        emitProfileUpdate(currentProfile);
+        window.HollowsideAuth.setStatus(status, successMessage, "success");
+    }
+
+    async function removeCustomizationAsset(path) {
+        if (!path) {
+            return;
+        }
+
+        var removeResult = await supabase.storage
+            .from("profile-customization")
+            .remove([path]);
+
+        if (removeResult.error) {
+            return false;
+        }
+
+        return true;
+    }
+
     avatarInput.addEventListener("change", function () {
         if (!currentUser || !avatarInput.files || !avatarInput.files[0]) {
             return;
@@ -696,6 +770,184 @@ document.addEventListener("DOMContentLoaded", function () {
         })(avatarInput.files[0]);
     });
 
+    backgroundBlurInput.addEventListener("input", function () {
+        var blur = Math.max(0, Math.min(30, Number(backgroundBlurInput.value) || 0));
+        backgroundBlurValue.textContent = blur + " px";
+        backgroundPreview.style.setProperty("--preview-blur", blur + "px");
+    });
+
+    backgroundInput.addEventListener("change", function () {
+        if (!currentUser || !backgroundInput.files || !backgroundInput.files[0]) {
+            return;
+        }
+
+        (async function uploadBackground(file) {
+            try {
+                if (!file.type || ["image/png", "image/jpeg", "image/webp"].indexOf(file.type) === -1) {
+                    throw new Error("Choose a PNG, JPEG, or WebP image for your profile background.");
+                }
+
+                if (file.size > 20 * 1024 * 1024) {
+                    throw new Error("The background image must be 20 MB or smaller.");
+                }
+
+                var editedFile = await window.HollowsideAuth.editImageFile(file, {
+                    shape: "rect",
+                    outputWidth: 1920,
+                    outputHeight: 1080,
+                    title: "Position your profile background."
+                });
+
+                if (!editedFile) {
+                    return;
+                }
+
+                var filePath = currentUser.id + "/background.png";
+                window.HollowsideAuth.setStatus(status, "Uploading your profile background...", "info");
+                var uploadResult = await supabase.storage
+                    .from("profile-customization")
+                    .upload(filePath, editedFile, {
+                        upsert: true,
+                        cacheControl: "3600",
+                        contentType: "image/png"
+                    });
+
+                if (uploadResult.error) {
+                    throw uploadResult.error;
+                }
+
+                var publicUrl = supabase.storage
+                    .from("profile-customization")
+                    .getPublicUrl(filePath).data.publicUrl + "?v=" + Date.now();
+
+                await updateCurrentProfile({
+                    profile_background_url: publicUrl,
+                    profile_background_path: filePath
+                }, "Profile background updated.");
+            } catch (error) {
+                window.HollowsideAuth.setStatus(
+                    status,
+                    error && error.message ? error.message : "Something went wrong while uploading your profile background.",
+                    "error"
+                );
+            } finally {
+                backgroundInput.value = "";
+            }
+        })(backgroundInput.files[0]);
+    });
+
+    backgroundRemove.addEventListener("click", async function () {
+        if (!currentUser || !currentProfile) {
+            return;
+        }
+
+        try {
+            var previousPath = currentProfile.profile_background_path || "";
+            await updateCurrentProfile({
+                profile_background_url: "",
+                profile_background_path: ""
+            }, "Profile background removed.");
+            await removeCustomizationAsset(previousPath);
+        } catch (error) {
+            window.HollowsideAuth.setStatus(status, error && error.message ? error.message : "The profile background could not be removed.", "error");
+        }
+    });
+
+    musicInput.addEventListener("change", function () {
+        if (!currentUser || !musicInput.files || !musicInput.files[0]) {
+            return;
+        }
+
+        (async function uploadMusic(file) {
+            var supportedTypes = {
+                "audio/mpeg": "mp3",
+                "audio/mp3": "mp3",
+                "audio/ogg": "ogg",
+                "audio/wav": "wav",
+                "audio/x-wav": "wav",
+                "audio/mp4": "m4a",
+                "audio/x-m4a": "m4a",
+                "audio/aac": "aac",
+                "audio/webm": "webm"
+            };
+            var supportedExtensions = ["mp3", "ogg", "wav", "m4a", "mp4", "aac", "webm"];
+            var mimeByExtension = {
+                mp3: "audio/mpeg",
+                ogg: "audio/ogg",
+                wav: "audio/wav",
+                m4a: "audio/mp4",
+                mp4: "audio/mp4",
+                aac: "audio/aac",
+                webm: "audio/webm"
+            };
+
+            try {
+                var nameExtension = (file.name.split(".").pop() || "").toLowerCase();
+                var extension = supportedTypes[file.type] || (supportedExtensions.indexOf(nameExtension) !== -1 ? nameExtension : "");
+                if (!extension) {
+                    throw new Error("Choose an MP3, OGG, WAV, M4A, AAC, or WebM file for profile music.");
+                }
+
+                if (file.size > 50 * 1024 * 1024) {
+                    throw new Error("Profile music must be 50 MB or smaller.");
+                }
+
+                var previousPath = (currentProfile && currentProfile.profile_music_path) || "";
+                var filePath = currentUser.id + "/music." + extension;
+                window.HollowsideAuth.setStatus(status, "Uploading your profile music...", "info");
+                var uploadResult = await supabase.storage
+                    .from("profile-customization")
+                    .upload(filePath, file, {
+                        upsert: true,
+                        cacheControl: "3600",
+                        contentType: file.type || mimeByExtension[extension]
+                    });
+
+                if (uploadResult.error) {
+                    throw uploadResult.error;
+                }
+
+                var publicUrl = supabase.storage
+                    .from("profile-customization")
+                    .getPublicUrl(filePath).data.publicUrl + "?v=" + Date.now();
+
+                await updateCurrentProfile({
+                    profile_music_url: publicUrl,
+                    profile_music_path: filePath
+                }, "Profile music updated.");
+
+                if (previousPath && previousPath !== filePath) {
+                    await removeCustomizationAsset(previousPath);
+                }
+            } catch (error) {
+                window.HollowsideAuth.setStatus(
+                    status,
+                    error && error.message ? error.message : "Something went wrong while uploading your profile music.",
+                    "error"
+                );
+            } finally {
+                musicInput.value = "";
+            }
+        })(musicInput.files[0]);
+    });
+
+    musicRemove.addEventListener("click", async function () {
+        if (!currentUser || !currentProfile) {
+            return;
+        }
+
+        try {
+            var previousPath = currentProfile.profile_music_path || "";
+            await updateCurrentProfile({
+                profile_music_url: "",
+                profile_music_path: ""
+            }, "Profile music removed.");
+            await removeCustomizationAsset(previousPath);
+        } catch (error) {
+            window.HollowsideAuth.setStatus(status, error && error.message ? error.message : "The profile music could not be removed.", "error");
+        }
+    });
+
     tabButtons.forEach(function (button) {
         button.addEventListener("click", function () {
             selectPanel(button.getAttribute("data-account-tab"), true);
@@ -717,6 +969,8 @@ document.addEventListener("DOMContentLoaded", function () {
         var bio = bioInput.value.trim();
         var websiteUrl = websiteInput.value.trim();
         var locationValue = locationInput.value.trim();
+        var backgroundBlur = Math.max(0, Math.min(30, Number(backgroundBlurInput.value) || 0));
+        var profileTheme = getSelectedProfileTheme();
 
         if (!usernameResult.ok) {
             window.HollowsideAuth.setStatus(status, usernameResult.message, "error");
@@ -736,7 +990,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     display_name: displayName,
                     bio: bio,
                     website_url: websiteUrl,
-                    location: locationValue
+                    location: locationValue,
+                    profile_background_blur: backgroundBlur,
+                    profile_theme: profileTheme
                 })
                 .eq("id", currentUser.id)
                 .select("*")
