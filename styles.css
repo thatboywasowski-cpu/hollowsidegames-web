@@ -1196,8 +1196,12 @@ select option:disabled {
 
 .verification-badge.verification-badge {
     --verification-fill: #ffffff;
-    width: 1rem;
-    height: 1rem;
+    width: 17px;
+    min-width: 17px;
+    max-width: 17px;
+    height: 17px;
+    min-height: 17px;
+    max-height: 17px;
     border-radius: 999px;
     display: inline-grid;
     place-items: center;
@@ -1207,7 +1211,7 @@ select option:disabled {
     line-height: 1;
     vertical-align: middle;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.24);
-    flex: 0 0 auto;
+    flex: 0 0 17px;
 }
 
 .verification-badge > .verification-icon {
@@ -1219,13 +1223,13 @@ select option:disabled {
 .verification-circle {
     fill: var(--verification-fill);
     stroke: rgba(255, 255, 255, 0.72);
-    stroke-width: 1.5;
+    stroke-width: 1;
 }
 
 .verification-check {
     fill: none;
     stroke: #050505;
-    stroke-width: 2.5;
+    stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
 }
