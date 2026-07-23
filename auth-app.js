@@ -746,7 +746,7 @@
             '<span class="verification-badge" data-mode="' + mode + '" title="' + label + '" aria-label="' + label + '">' +
                 '<svg class="verification-icon" width="17" height="17" viewBox="0 0 17 17" aria-hidden="true" focusable="false">' +
                     '<circle class="verification-circle" cx="8.5" cy="8.5" r="8"></circle>' +
-                    '<path class="verification-check" d="M3.5 8.25 L7 11.75 L13.5 5.25"></path>' +
+                    '<path class="verification-check" d="M3.5 8.25 L7 11.75 L13.5 5.25" transform="translate(8.5 8.5) scale(0.9) translate(-8.5 -8.5)"></path>' +
                 "</svg>" +
             "</span>"
         );
