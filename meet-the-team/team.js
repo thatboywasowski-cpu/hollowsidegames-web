@@ -169,7 +169,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     "</div>" +
                     '<div class="team-entry-footer">' +
                         '<div class="team-entry-meta">' +
-                            '<span>Written by <a href="/profile?id=' + encodeURIComponent(article.author_account_id) + '">' + escapeHtml(article.author_display_name) + authorBadge + "</a></span>" +
+                            '<span>Written by <a href="/profile?id=' + encodeURIComponent(article.author_account_id) + '">' +
+                                escapeHtml(article.author_display_name) +
+                                ' <span class="identity-line">@' + escapeHtml(article.author_username) + authorBadge + "</span>" +
+                            "</a></span>" +
                             "<span>" + escapeHtml(formatDate(article.created_at)) + "</span>" +
                             edited + linkedProfile +
                         "</div>" +

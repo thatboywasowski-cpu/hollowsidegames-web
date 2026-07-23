@@ -214,7 +214,10 @@ document.addEventListener("DOMContentLoaded", function () {
             verification_mode: article.author_verification_mode
         }, "Verified Hollowside account");
         author.href = "/profile?id=" + encodeURIComponent(article.author_account_id);
-        author.innerHTML = escapeHtml(article.author_display_name) + authorBadge;
+        author.innerHTML = (
+            escapeHtml(article.author_display_name) +
+            ' <span class="identity-line">@' + escapeHtml(article.author_username) + authorBadge + "</span>"
+        );
         published.textContent = "Published " + formatDate(article.created_at);
         edited.hidden = !hasBeenEdited(article);
         edited.textContent = hasBeenEdited(article) ? "Last edited " + formatDateTime(article.updated_at) : "";

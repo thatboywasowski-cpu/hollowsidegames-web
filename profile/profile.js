@@ -4,7 +4,6 @@ document.addEventListener("DOMContentLoaded", function () {
     var accountId = params.get("id");
     var avatar = document.getElementById("profile-avatar");
     var displayName = document.getElementById("profile-display-name");
-    var displayBadge = document.getElementById("profile-display-badge");
     var username = document.getElementById("profile-username");
     var usernameBadge = document.getElementById("profile-username-badge");
     var role = document.getElementById("profile-role");
@@ -1200,7 +1199,6 @@ document.addEventListener("DOMContentLoaded", function () {
             setAvatar(profileCard);
             displayName.textContent = profileCard.display_name;
             username.textContent = "@" + profileCard.username;
-            displayBadge.innerHTML = "";
             usernameBadge.innerHTML = window.HollowsideAuth.getVerificationBadge(profileCard, "Verified Hollowside account");
             role.textContent = profileCard.role_label;
             memberSince.textContent = "Member since " + new Date(profileCard.member_since).toLocaleDateString();

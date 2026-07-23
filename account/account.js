@@ -44,7 +44,6 @@ document.addEventListener("DOMContentLoaded", function () {
     var passwordInput = document.getElementById("account-new-password");
     var confirmPasswordInput = document.getElementById("account-confirm-password");
     var previewName = document.getElementById("account-preview-name");
-    var previewBadge = document.getElementById("account-preview-badge");
     var previewHandle = document.getElementById("account-preview-handle");
     var previewHandleBadge = document.getElementById("account-preview-handle-badge");
     var previewRole = document.getElementById("account-preview-role");
@@ -275,7 +274,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         previewName.textContent = displayName;
         previewHandle.textContent = username;
-        previewBadge.innerHTML = "";
         previewHandleBadge.innerHTML = window.HollowsideAuth.getVerificationBadge(accountContext, "Verified Hollowside account");
         previewRole.textContent = roleLabel;
         previewId.textContent = accountId;

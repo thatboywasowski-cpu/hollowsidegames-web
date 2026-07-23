@@ -744,7 +744,7 @@
 
         return (
             '<span class="verification-badge" data-mode="' + mode + '" title="' + label + '" aria-label="' + label + '">' +
-                '<img src="/Hollowside%20Games%20website%20verification.png" alt="">' +
+                '<span class="verification-check" aria-hidden="true"></span>' +
             "</span>"
         );
     }
