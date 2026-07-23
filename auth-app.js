@@ -744,7 +744,10 @@
 
         return (
             '<span class="verification-badge" data-mode="' + mode + '" title="' + label + '" aria-label="' + label + '">' +
-                '<span class="verification-check" aria-hidden="true"></span>' +
+                '<svg class="verification-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">' +
+                    '<circle class="verification-circle" cx="10" cy="10" r="9.25"></circle>' +
+                    '<path class="verification-check" d="M4 10 L8 14 L16 6"></path>' +
+                "</svg>" +
             "</span>"
         );
     }
