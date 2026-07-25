@@ -66,7 +66,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             requestForm.reset();
-            window.HollowsideAuth.setStatus(status, "Password reset email sent. Check your inbox for the Hollowside LLC message.", "success");
+            window.HollowsideAuth.setStatus(status, "Password reset email sent. Check your inbox for the Hollowside message.", "success");
         } catch (error) {
             window.HollowsideAuth.setStatus(
                 status,

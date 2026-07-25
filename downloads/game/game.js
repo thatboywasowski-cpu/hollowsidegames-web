@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", function () {
         var preferred = supported.indexOf(detected) !== -1 ? detected : supported[0];
         var shotList = Array.isArray(item.screenshot_urls) ? item.screenshot_urls : [];
 
-        document.title = item.title + " | Hollowside LLC";
+        document.title = item.title + " | Hollowside";
         title.textContent = item.title;
         summary.textContent = item.summary || "No description provided.";
         platforms.innerHTML = supported.map(icon).join("");

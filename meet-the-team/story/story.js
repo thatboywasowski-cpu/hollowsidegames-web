@@ -203,7 +203,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function renderArticle() {
-        document.title = article.name + " | Hollowside LLC";
+        document.title = article.name + " | Hollowside";
         expertise.textContent = article.expertise;
         name.textContent = article.name;
         introduction.textContent = article.introduction;

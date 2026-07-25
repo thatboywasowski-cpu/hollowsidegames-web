@@ -119,7 +119,7 @@ document.addEventListener("DOMContentLoaded", function () {
             window.HollowsideAuth.setStatus(
                 status,
                 email
-                    ? "Account created as a Member. Check your email for the Hollowside LLC code or confirmation message, then enable 2FA in account settings to become Trusted Member."
+                    ? "Account created as a Member. Check your email for the Hollowside code or confirmation message, then enable 2FA in account settings to become Trusted Member."
                     : "Account created as a Member. You can log in with your username and add email 2FA later from account settings.",
                 "success"
             );

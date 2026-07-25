@@ -442,7 +442,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 throw commentsResponse.error;
             }
 
-            document.title = postCard.title + " | Hollowside LLC";
+            document.title = postCard.title + " | Hollowside";
             subtitle.textContent = (postCard.subtitle || "Official Update").toUpperCase();
             title.textContent = postCard.title;
             summary.textContent = postCard.summary || "No short description yet.";
