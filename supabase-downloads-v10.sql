@@ -4,7 +4,7 @@
 
 insert into public.permission_definitions (permission_key, label, description, category)
 values
-    ('publish_downloads', 'Able To Publish Downloads', 'Can publish games, project files, and HollowEngine builds in the Downloads section.', 'content')
+    ('publish_downloads', 'Able To Publish Downloads', 'Can publish games, project files, and Obsidian builds in the Downloads section.', 'content')
 on conflict (permission_key) do update
 set label = excluded.label,
     description = excluded.description,

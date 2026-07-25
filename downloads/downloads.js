@@ -155,14 +155,14 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function renderItems(items) {
-        heading.textContent = activeCategory === "engine" ? "Engine" : "Games";
+        heading.textContent = activeCategory === "engine" ? "Obsidian" : "Games";
         copy.textContent = items.length
             ? items.length + " download" + (items.length === 1 ? "" : "s") + " available."
             : "No downloads have been published in this category yet.";
 
         if (!items.length) {
             grid.innerHTML = activeCategory === "engine"
-                ? '<article class="content-card download-card"><h3>HollowEngine</h3><p class="download-empty">HollowEngine builds will appear here when an approved account publishes one.</p></article>'
+                ? '<article class="content-card download-card"><h3>Obsidian</h3><p class="download-empty">Obsidian builds will appear here when an approved account publishes one.</p></article>'
                 : '<p class="download-empty">No game downloads are available yet.</p>';
             return;
         }
