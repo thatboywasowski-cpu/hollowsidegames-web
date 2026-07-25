@@ -18,7 +18,7 @@ The Edge Function sends the graphical email directly. Configure these Supabase s
 
 ```bash
 supabase secrets set RESEND_API_KEY=your_resend_api_key
-supabase secrets set HOLLOWSIDE_2FA_FROM="Hollowside Games <security@hollowsidegames.com>"
+supabase secrets set HOLLOWSIDE_2FA_FROM="Hollowside LLC <security@hollowsidegames.com>"
 ```
 
 The sender domain should be verified in Resend. A verified domain is what helps the email look trusted instead of suspicious.

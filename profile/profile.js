@@ -1194,7 +1194,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 profileCard.role_key = viewerContext.effective_role_key;
             }
 
-            document.title = profileCard.display_name + " | Hollowside Games";
+            document.title = profileCard.display_name + " | Hollowside LLC";
             applyProfileCustomization(profileCard);
             setAvatar(profileCard);
             displayName.textContent = profileCard.display_name;

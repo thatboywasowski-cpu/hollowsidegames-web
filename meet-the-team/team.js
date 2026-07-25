@@ -129,7 +129,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return (
                 '<a class="team-entry-media" href="' + href + '">' +
                     '<span class="team-entry-placeholder">' +
-                        '<img src="/Hollowside Games logo.png" alt="Hollowside Games">' +
+                        '<img src="/Hollowside Games logo.png" alt="Hollowside LLC">' +
                     "</span>" +
                 "</a>"
             );
