@@ -20,7 +20,7 @@ export function buildTwoFactorEmail(code: string) {
           <tr>
             <td style="padding:0;background:#080808;">
               <div style="height:140px;background:linear-gradient(135deg,#111 0%,#1d1d1d 48%,#080808 100%);border-bottom:1px solid #262626;text-align:center;padding-top:34px;">
-                <img src="https://hollowsidegames.com/Hollowside%20Games%20logo.png" width="78" height="78" alt="Hollowside LLC" style="display:block;width:78px;height:78px;margin:0 auto 14px;border-radius:20px;background:#ffffff;object-fit:cover;">
+                <img src="https://hollowside.com/Hollowside%20Games%20logo.png" width="78" height="78" alt="Hollowside LLC" style="display:block;width:78px;height:78px;margin:0 auto 14px;border-radius:20px;background:#ffffff;object-fit:cover;">
                 <div style="font-size:13px;letter-spacing:0.2em;text-transform:uppercase;color:#b7b7b7;">Hollowside LLC</div>
               </div>
             </td>

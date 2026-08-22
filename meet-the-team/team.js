@@ -75,6 +75,8 @@ document.addEventListener("DOMContentLoaded", function () {
         try {
             var url = new URL(raw, window.location.origin);
             var allowedHost = url.hostname === window.location.hostname
+                || url.hostname === "hollowside.com"
+                || url.hostname === "www.hollowside.com"
                 || url.hostname === "hollowsidegames.com"
                 || url.hostname === "www.hollowsidegames.com";
             var profileId = url.searchParams.get("id") || "";
